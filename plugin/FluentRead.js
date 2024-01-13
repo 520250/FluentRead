@@ -67,7 +67,7 @@ const chatGPT = "chat.openai.com"
 let adapterMap = new (Map);
 
 // DOM 防抖，单位毫秒
-let throttleObserveDOM = throttle(observeDOM, 1000);
+let throttleObserveDOM = throttle(observeDOM, 3000);
 
 // 剪枝 set
 let pruneSet = new Set();
@@ -88,17 +88,15 @@ let pruneSet = new Set();
             const observer = new MutationObserver(function (mutations, obs) {
                 mutations.forEach(mutation => {
                     if (isNull(mutation.target)) return;
-
                     // console.log("原先变更记录：", mutation.target);
                     if (["div", "section", "main", "tbody", "tr", "td", "button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
                         handleDOMUpdate(mutation.target);
                     }
-
                 });
             });
             observer.observe(document.body, {childList: true, subtree: true});
 
-            // 2、手动开始第一次元素处理
+            // 2、手动开启一次解析 DOM 树
             handleDOMUpdate(document.body);
         }
     });
@@ -198,8 +196,6 @@ function parseDfs(node, respMap) {
     if (isNull(node)) {
         return;
     }
-    // console.log("text ", node)
-
     // console.log("当前节点：", node)
 
     switch (node.nodeType) {
@@ -220,11 +216,6 @@ function parseDfs(node, respMap) {
             break;
         // 2、文本节点
         case  Node.TEXT_NODE:
-            // 跳过已经处理的 text 元素
-            if (pruneSet.has(node.outerHTML + node.textContent)) {
-                console.log("已经处理过的textContent：", node.textContent)
-                return;
-            }
             // console.log("文本节点：", node);
             // 如果存在适配的第三方方法，则使用
             let fn = adapterMap[url.host];
@@ -252,11 +243,17 @@ function processInput(node, respMap) {
     // 1、如果存在 placeholder 值
     if (node.placeholder) {
         let placeholder = node.placeholder.replace(/\u00A0/g, ' ').trim();
+        // 剪枝：跳过已经处理的 text 元素
+        if (pruneSet.has(placeholder)) {
+            console.log("已处理的 placeholder，跳过：", placeholder)
+            return;
+        }
         if (placeholder.length > 0 && withoutChinese(placeholder)) {
             signature(url.host + placeholder).then((value) => {
                 // respMap[signature] 不为空则替换原文本
                 if (!isNull(respMap[value]) && respMap[value] !== "") {
                     node.placeholder = respMap[value];
+                    pruneSet.add(respMap[value])    // 剪枝
                 }
             }).catch((error) => {
                 console.error("Error in signature promise: ", error);
@@ -266,11 +263,17 @@ function processInput(node, respMap) {
     // 2、如果存在 value 值（不应该修改 input 与 textarea 的 value 值）
     if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) {
         let value = node.value.replace(/\u00A0/g, ' ').trim();
+        // 剪枝：跳过已经处理的 text 元素
+        if (pruneSet.has(value)) {
+            console.log("已处理的按钮 value，跳过：", value)
+            return;
+        }
         if (value.length > 0 && withoutChinese(value)) {
             signature(url.host + value).then((value) => {
                 // respMap[signature] 不为空则替换原文本
                 if (!isNull(respMap[value]) && respMap[value] !== "") {
                     node.value = respMap[value];
+                    pruneSet.add(respMap[value])    // 剪枝
                 }
             }).catch((error) => {
                 console.error("Error in signature promise: ", error);
@@ -282,15 +285,18 @@ function processInput(node, respMap) {
 // read：处理文本内容
 function procPlain(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
+    // 剪枝：跳过已经处理的 text 元素
+    if (pruneSet.has(text)) {
+        console.log("已处理的 text，跳过：", text)
+        return;
+    }
     if (text.length > 0 && withoutChinese(text)) {
         signature(url.host + text).then((value) => {
             // 添加一个检查以确保 respMap 是有效的
             if (!isNull(respMap[value]) && respMap[value] !== "") {
                 node.textContent = respMap[value];
             }
-            // 剪枝
-            pruneSet.add(node.outerHTML + node.textContent)
-
+            pruneSet.add(respMap[value])    // 剪枝
         }).catch((error) => {
             console.error("Error in signature promise: ", error);
         });
@@ -300,12 +306,18 @@ function procPlain(node, respMap) {
 // read：处理 aria-label 属性
 function processAriaLabel(node, respMap) {
     let ariaLabel = node.getAttribute('aria-label').replace(/\u00A0/g, ' ').trim();
+    // 剪枝：跳过已经处理的 text 元素
+    if (pruneSet.has(ariaLabel)) {
+        console.log("已处理的 ariaLabel，跳过：", ariaLabel)
+        return;
+    }
     if (ariaLabel) {
         if (ariaLabel.length > 0 && withoutChinese(ariaLabel)) {
             signature(url.host + ariaLabel).then((value) => {
                 // 添加一个检查以确保 respMap 是有效的
                 if (respMap && respMap[value] !== undefined && respMap[value] !== "") {
                     node.setAttribute('aria-label', respMap[value]);
+                    pruneSet.add(respMap[value])    // 剪枝
                 }
             }).catch((error) => {
                 console.error("Error in signature promise: ", error);
