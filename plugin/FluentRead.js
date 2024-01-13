@@ -69,6 +69,9 @@ let adapterMap = new (Map);
 // DOM 防抖，单位毫秒
 let throttleObserveDOM = throttle(observeDOM, 1000);
 
+// 剪枝 set
+let pruneSet = new Set();
+
 // endregion
 
 (function () {
@@ -76,9 +79,6 @@ let throttleObserveDOM = throttle(observeDOM, 1000);
 
     // 初始化逻辑
     init()
-
-    // 剪枝 set
-    let pruneSet = new Set();
 
     // 检查是否需要拉取数据
     checkRun(function (shouldRun) {
@@ -90,20 +90,10 @@ let throttleObserveDOM = throttle(observeDOM, 1000);
                     if (isNull(mutation.target)) return;
 
                     // console.log("原先变更记录：", mutation.target);
+                    if (["div", "section", "main", "tbody", "tr", "td", "button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
+                        handleDOMUpdate(mutation.target);
+                    }
 
-                    signature(mutation.target.innerHTML).then((value) => {
-
-                        // Set 剪枝
-                        if (pruneSet.has(value)) return;
-
-                        pruneSet.add(value);
-                        console.log("变更记录：", value, " ：", mutation.target);
-
-                        // 处理每个变更记录
-                        if (["div", "section", "main", "tbody", "tr", "td", "button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
-                            handleDOMUpdate(mutation.target);
-                        }
-                    })
                 });
             });
             observer.observe(document.body, {childList: true, subtree: true});
@@ -202,18 +192,20 @@ function observeDOM() {
     });
 }
 
-
 // read：递归提取节点的文本内容
 function parseDfs(node, respMap) {
     // 检查node是否为null
     if (isNull(node)) {
         return;
     }
+    // console.log("text ", node)
+
+    // console.log("当前节点：", node)
 
     switch (node.nodeType) {
         // 1、元素节点
         case Node.ELEMENT_NODE:
-            // console.log("变更的节点信息： ", node);
+            // console.log("元素节点： ", node);
             if (["head", "path", "script", "style", "img", "noscript"].includes(node.tagName.toLowerCase()) || isSkip(node)) {
                 // console.log("忽略节点: ", node);
                 return;
@@ -228,12 +220,17 @@ function parseDfs(node, respMap) {
             break;
         // 2、文本节点
         case  Node.TEXT_NODE:
+            // 跳过已经处理的 text 元素
+            if (pruneSet.has(node.outerHTML + node.textContent)) {
+                console.log("已经处理过的textContent：", node.textContent)
+                return;
+            }
             // console.log("文本节点：", node);
             // 如果存在适配的第三方方法，则使用
             let fn = adapterMap[url.host];
             isNull(fn) ? procPlain(node, respMap) : fn(node, respMap);
     }
-    // 递归处理子节点
+
     let child = node.firstChild;
     while (child) {
         parseDfs(child, respMap);
@@ -285,15 +282,15 @@ function processInput(node, respMap) {
 // read：处理文本内容
 function procPlain(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-    if (text === "Status") {
-        console.log("监测到节点：", text);
-    }
     if (text.length > 0 && withoutChinese(text)) {
         signature(url.host + text).then((value) => {
             // 添加一个检查以确保 respMap 是有效的
             if (!isNull(respMap[value]) && respMap[value] !== "") {
                 node.textContent = respMap[value];
             }
+            // 剪枝
+            pruneSet.add(node.outerHTML + node.textContent)
+
         }).catch((error) => {
             console.error("Error in signature promise: ", error);
         });
