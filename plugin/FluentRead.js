@@ -89,7 +89,7 @@ let throttleObserveDOM = throttle(observeDOM, 3000);
                     if (isNull(mutation.target)) return;
                     // console.log("变更记录: ", mutation.target);
                     // 处理每个变更记录
-                    if (["div", "button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
+                    if (["div", "section","main","tbody","tr","td","button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
                         handleDOMUpdate(mutation.target);
                     }
                 });

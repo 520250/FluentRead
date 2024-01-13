@@ -37,7 +37,7 @@ let url = new URL(location.href.split('?')[0]);
                 let node = mutation.target;
 
                 // 处理每个变更记录
-                if (["div", "button", "svg", "span", "nav", "body"].includes(node.tagName.toLowerCase())) {
+                if (["div", "section","main","tbody","tr","td","button", "svg", "span", "nav", "body", "label"].includes(node.tagName.toLowerCase())) {
                     parseDfs(node);
                     debouncedEcho();
                 }
@@ -170,6 +170,11 @@ function isSkip(node) {
         // coze
         || node.classList.contains("WGuG2UMJJ8wbd0zOu7JN")
         || node.classList.contains("semi-typography")
+        || node.classList.contains("flow-markdown-body")
+        || node.classList.contains("jwzzTyL0ME4eVCKuxpDL")
+        || node.classList.contains("WsIBTuSuHYIPuetXwr1f")
+        || node.classList.contains("kJSEgautwioJ9kmI18b8")
+
 }
 
 
