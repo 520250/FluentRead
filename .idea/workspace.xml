@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7eef2679-86b9-4e1e-a6aa-7a9b35db8094" name="更改" comment="回退" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file://$USER_HOME$/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.21.3.darwin-arm64" />
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;520250&quot;
+  }
+}</component>
+  <component name="GitToolBoxStore">
+    <option name="projectConfigVersion" value="5" />
+    <option name="recentBranches">
+      <RecentBranches>
+        <option name="branchesForRepo">
+          <list>
+            <RecentBranchesForRepo>
+              <option name="branches">
+                <list>
+                  <RecentBranch>
+                    <option name="branchName" value="main" />
+                    <option name="lastUsedInstant" value="1705114012" />
+                  </RecentBranch>
+                </list>
+              </option>
+              <option name="repositoryRootUrl" value="file://$PROJECT_DIR$" />
+            </RecentBranchesForRepo>
+          </list>
+        </option>
+      </RecentBranches>
+    </option>
+  </component>
+  <component name="GithubDefaultAccount">
+    <option name="defaultAccountId" value="85bd4bcc-83e9-4f38-bfde-71afb4b0304f" />
+  </component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="85bd4bcc-83e9-4f38-bfde-71afb4b0304f" />
+        <option name="url" value="https://github.com/520250/FluentRead.git" />
+      </UrlAndAccount>
+    </option>
+  </component>
+  <component name="KubernetesApiProvider">{
+  &quot;contexts&quot;: [
+    {
+      &quot;name&quot;: &quot;docker-desktop&quot;
+    }
+  ],
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="KubernetesSettings">
+    <option name="contextName" value="docker-desktop" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="2abIvRaRYMpHXc4artJSdobysxi" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "Go 构建.go build FluentRead.executor": "Run",
+    "Go 构建.go build FluentRead/misc/openai.executor": "Run",
+    "Go 构建.go build FluentRead/openai.executor": "Run",
+    "Go 测试.FluentRead/logic 中的 TestPreRead.executor": "Debug",
+    "Go 测试.FluentRead/logic 中的 TestReadByPage.executor": "Run",
+    "Go 测试.FluentRead/misc/inspection 中的 TestInsectDB.executor": "Run",
+    "Go 测试.FluentRead/misc/inspection 中的 TestQuotation.executor": "Run",
+    "Go 测试.FluentRead/misc/manuals 中的 TestInsertTrans.executor": "Run",
+    "Go 测试.FluentRead/misc/manuals 中的 TestInsertTrans_JSON.executor": "Run",
+    "Go 测试.FluentRead/misc/test 中的 BenchmarkTest.executor": "Run",
+    "Go 测试.FluentRead/models 中的 BenchmarkMapToBytes.executor": "Run",
+    "Go 测试.FluentRead/repo/db 中的 BenchmarkMapToBytes.executor": "Run",
+    "Go 测试.FluentRead/utils 中的 BenchmarkMapToBytes.executor": "Run",
+    "Notification.DisplayName-DoNotAsk-GitHub Copilot": "GitHub Copilot",
+    "Notification.DisplayName-DoNotAsk-Go tools integration notifications": "Go 工具集成",
+    "Notification.DisplayName-DoNotAsk-JavaScript: Code Vision Performance": "JavaScript: Code Vision 性能观察程序",
+    "Notification.DisplayName-DoNotAsk-Vcs Important Messages": "VCS 重要消息",
+    "Notification.DoNotAsk-GitHub Copilot": "true",
+    "Notification.DoNotAsk-Go tools integration notifications": "true",
+    "Notification.DoNotAsk-JavaScript: Code Vision Performance": "true",
+    "Notification.DoNotAsk-Vcs Important Messages": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "ShowUsagesActions.previewPropertyKey": "true",
+    "git-widget-placeholder": "main",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "/Users/thinkstu",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.ApplicationConfigurable"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/models/constant" />
+      <recent name="$PROJECT_DIR$/utils" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go 构建.go build FluentRead">
+    <configuration name="go build FluentRead" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="FluentRead" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="FluentRead" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build FluentRead/openai" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="FluentRead" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="FluentRead/openai" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/openai/openai.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="FluentRead/misc/manuals 中的 TestInsertTrans" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="FluentRead" />
+      <working_directory value="$PROJECT_DIR$/misc/manuals" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="FluentRead/misc/manuals" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestInsertTrans\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="FluentRead/misc/manuals 中的 TestInsertTrans_JSON" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="FluentRead" />
+      <working_directory value="$PROJECT_DIR$/misc/manuals" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="FluentRead/misc/manuals" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestInsertTrans_JSON\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="FluentRead/repo/db 中的 BenchmarkMapToBytes" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="FluentRead" />
+      <working_directory value="$PROJECT_DIR$/repo/db" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="FluentRead/repo/db" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gobench" />
+      <pattern value="^\QBenchmarkMapToBytes\E$" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go 构建.go build FluentRead" />
+        <item itemvalue="Go 构建.go build FluentRead/openai" />
+        <item itemvalue="Go 测试.FluentRead/misc/manuals 中的 TestInsertTrans_JSON" />
+        <item itemvalue="Go 测试.FluentRead/misc/manuals 中的 TestInsertTrans" />
+        <item itemvalue="Go 测试.FluentRead/repo/db 中的 BenchmarkMapToBytes" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-gosdk-266795519c66-911b893a1778-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-233.13135.104" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="7eef2679-86b9-4e1e-a6aa-7a9b35db8094" name="更改" comment="" />
+      <created>1704581081229</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1704581081229</updated>
+    </task>
+    <task id="LOCAL-00001" summary="opti">
+      <option name="closed" value="true" />
+      <created>1704715991708</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1704715991708</updated>
+    </task>
+    <task id="LOCAL-00002" summary="opti">
+      <option name="closed" value="true" />
+      <created>1704727940386</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1704727940386</updated>
+    </task>
+    <task id="LOCAL-00003" summary="优化项目总体架构+精简代码">
+      <option name="closed" value="true" />
+      <created>1704763353083</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1704763353083</updated>
+    </task>
+    <task id="LOCAL-00004" summary="优化打印英文文本函数">
+      <option name="closed" value="true" />
+      <created>1704775003570</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1704775003570</updated>
+    </task>
+    <task id="LOCAL-00005" summary="优化js代码逻辑、暂存">
+      <option name="closed" value="true" />
+      <created>1704787291512</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1704787291512</updated>
+    </task>
+    <task id="LOCAL-00006" summary="优化js代码逻辑">
+      <option name="closed" value="true" />
+      <created>1704796339277</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1704796339277</updated>
+    </task>
+    <task id="LOCAL-00007" summary="优化maven仓库适配">
+      <option name="closed" value="true" />
+      <created>1704798516235</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1704798516235</updated>
+    </task>
+    <task id="LOCAL-00008" summary="优化docker仓库适配">
+      <option name="closed" value="true" />
+      <created>1704804191717</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1704804191717</updated>
+    </task>
+    <task id="LOCAL-00009" summary="opti">
+      <option name="closed" value="true" />
+      <created>1704850774230</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1704850774230</updated>
+    </task>
+    <task id="LOCAL-00010" summary="打个tag">
+      <option name="closed" value="true" />
+      <created>1704853848514</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1704853848514</updated>
+    </task>
+    <task id="LOCAL-00011" summary="第二次打个tag">
+      <option name="closed" value="true" />
+      <created>1704856232891</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1704856232891</updated>
+    </task>
+    <task id="LOCAL-00012" summary="暂存">
+      <option name="closed" value="true" />
+      <created>1704857692665</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1704857692665</updated>
+    </task>
+    <task id="LOCAL-00013" summary="优化preread/read并发问题">
+      <option name="closed" value="true" />
+      <created>1704859045957</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1704859045957</updated>
+    </task>
+    <task id="LOCAL-00014" summary="新增去除所有翻译后的前后中文双引号函数">
+      <option name="closed" value="true" />
+      <created>1704860899863</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1704860899863</updated>
+    </task>
+    <task id="LOCAL-00015" summary="优化日期翻译">
+      <option name="closed" value="true" />
+      <created>1704862553725</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1704862553725</updated>
+    </task>
+    <task id="LOCAL-00016" summary="适配chatGPT">
+      <option name="closed" value="true" />
+      <created>1704873988696</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1704873988696</updated>
+    </task>
+    <task id="LOCAL-00017" summary="fix 日期匹配问题">
+      <option name="closed" value="true" />
+      <created>1704875179513</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1704875179514</updated>
+    </task>
+    <task id="LOCAL-00018" summary="opti">
+      <option name="closed" value="true" />
+      <created>1704876103722</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1704876103722</updated>
+    </task>
+    <task id="LOCAL-00019" summary="opti">
+      <option name="closed" value="true" />
+      <created>1704878509660</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1704878509660</updated>
+    </task>
+    <task id="LOCAL-00020" summary="接入openai，暂存">
+      <option name="closed" value="true" />
+      <created>1704945823899</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1704945823899</updated>
+    </task>
+    <task id="LOCAL-00021" summary="接入openai，新开启收集接口collect">
+      <option name="closed" value="true" />
+      <created>1704956037325</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1704956037325</updated>
+    </task>
+    <task id="LOCAL-00022" summary="opti">
+      <option name="closed" value="true" />
+      <created>1704956127360</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1704956127360</updated>
+    </task>
+    <task id="LOCAL-00023" summary="文本打印使用GM存储">
+      <option name="closed" value="true" />
+      <created>1705025707424</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1705025707424</updated>
+    </task>
+    <task id="LOCAL-00024" summary="标记未验证的fix行数逻辑">
+      <option name="closed" value="true" />
+      <created>1705038491817</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1705038491817</updated>
+    </task>
+    <task id="LOCAL-00025" summary="回退">
+      <option name="closed" value="true" />
+      <created>1705040044296</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1705040044296</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="优化项目总体架构+精简代码" />
+    <MESSAGE value="优化打印英文文本函数" />
+    <MESSAGE value="优化js代码逻辑、暂存" />
+    <MESSAGE value="优化js代码逻辑" />
+    <MESSAGE value="优化maven仓库适配" />
+    <MESSAGE value="优化docker仓库适配" />
+    <MESSAGE value="打个tag" />
+    <MESSAGE value="第二次打个tag" />
+    <MESSAGE value="暂存" />
+    <MESSAGE value="优化preread/read并发问题" />
+    <MESSAGE value="新增去除所有翻译后的前后中文双引号函数" />
+    <MESSAGE value="优化日期翻译" />
+    <MESSAGE value="适配chatGPT" />
+    <MESSAGE value="fix 日期匹配问题" />
+    <MESSAGE value="接入openai，暂存" />
+    <MESSAGE value="接入openai，新开启收集接口collect" />
+    <MESSAGE value="opti" />
+    <MESSAGE value="文本打印使用GM存储" />
+    <MESSAGE value="标记未验证的fix行数逻辑" />
+    <MESSAGE value="回退" />
+    <option name="LAST_COMMIT_MESSAGE" value="回退" />
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
+</project>

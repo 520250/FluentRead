@@ -42,5 +42,5 @@ go build &&./FluentRead
 
 # star 历史记录
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Bistutu/FluentRead&type=Date)](https://star-history.com/#Bistutu/FluentRead&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=520250/FluentRead&type=Date)](https://star-history.com/#520250/FluentRead&Date)
 
