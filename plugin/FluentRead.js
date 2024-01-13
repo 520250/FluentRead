@@ -220,6 +220,7 @@ function parseDfs(node, respMap) {
             // 如果存在适配的第三方方法，则使用
             let fn = adapterMap[url.host];
             isNull(fn) ? procPlain(node, respMap) : fn(node, respMap);
+            return;
     }
 
     let child = node.firstChild;
