@@ -104,17 +104,22 @@ function parseText(node) {
     }
     if (text.length > 0 && withoutChinese(text) && isEnglish(text)) {
         // 从 GM 中取出 host 对应的值
-        let hostValue = GM_getValue(url.host);
-        let host;
-        if (!Array.isArray(hostValue)) {
-            host = new Set();
-        } else {
-            host = new Set(hostValue);
-        }
-        host.add(text);
-        // 将 Set 转换为数组以存储
-        GM_setValue(url.host, Array.from(host));
+        process(text);
     }
+}
+
+// 真正处理文本
+function process(text) {
+    let hostValue = GM_getValue(url.host);
+    let host;
+    if (!Array.isArray(hostValue)) {
+        host = new Set();
+    } else {
+        host = new Set(hostValue);
+    }
+    host.add(text);
+    // 将 Set 转换为数组以存储
+    GM_setValue(url.host, Array.from(host));
 }
 
 function processInput(node) {
@@ -122,10 +127,10 @@ function processInput(node) {
     let value = node.value.replace(/\u00A0/g, ' ').trim();
 
     if (placeholder.length > 0 && withoutChinese(placeholder) && isEnglish(placeholder)) {
-        textSet.add(placeholder);
+        process(placeholder);
     }
     if (value.length > 0 && withoutChinese(value) && isEnglish(value)) {
-        textSet.add(value);
+        process(value);
     }
 }
 
@@ -134,7 +139,7 @@ function processAriaLabel(node) {
     let ariaLabel = node.getAttribute('aria-label').replace(/\u00A0/g, ' ').trim();
     if (ariaLabel) {
         if (ariaLabel.length > 0 && withoutChinese(ariaLabel)) {
-            textSet.add(ariaLabel);
+            process(ariaLabel);
         }
     }
 }
@@ -162,14 +167,14 @@ function isSkip(node) {
         || node.classList.contains("js-post-body")
         || node.id === "inline_related_var_a_less"
         || node.id === "hot-network-questions"
+        // coze
+        || node.classList.contains("WGuG2UMJJ8wbd0zOu7JN")
+        || node.classList.contains("semi-typography")
 }
 
 
 // 将Set转换为数组，对数组进行字母排序（忽略大小写），并输出排序后的数组
 function echo() {
-    // let arrayFromSet = Array.from(textSet);
-    // arrayFromSet.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    // console.log(arrayFromSet);
     let listValues = GM_listValues();
     listValues.forEach(key => {
         let value = GM_getValue(key);

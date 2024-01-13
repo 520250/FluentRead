@@ -254,8 +254,8 @@ function processInput(node, respMap) {
             });
         }
     }
-    // 2、如果存在 value 值
-    if (node.value) {
+    // 2、如果存在 value 值（不应该修改 input 与 textarea 的 value 值）
+    if (node.tagName.toLowerCase() === "button" && node.value) {
         let value = node.value.replace(/\u00A0/g, ' ').trim();
         if (value.length > 0 && withoutChinese(value)) {
             signature(url.host + value).then((value) => {
@@ -273,8 +273,8 @@ function processInput(node, respMap) {
 // read：处理文本内容
 function procPlain(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-    if(text==="Status"){
-        console.log("监测到节点：",text);
+    if (text === "Status") {
+        console.log("监测到节点：", text);
     }
     if (text.length > 0 && withoutChinese(text)) {
         signature(url.host + text).then((value) => {

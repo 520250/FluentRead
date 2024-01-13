@@ -13,7 +13,7 @@ import (
 	"FluentRead/repo/db"
 )
 
-const count = 20
+const count = 15
 
 func main() {
 	ctx := context.Background()
