@@ -34,9 +34,7 @@ const expiringTime = 86400000 / 4;
 // 服务请求地址
 let source = "http://127.0.0.1"
 // let source = "https://fr.unmeta.cn"
-const read = "%s/read".replace("%s", source);
-const preread = "%s/preread".replace("%s", source);
-
+const read = "%s/read".replace("%s", source), preread = "%s/preread".replace("%s", source);
 // 其余常量
 const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
 
@@ -69,7 +67,7 @@ const chatGPT = "chat.openai.com"
 let adapterMap = new (Map);
 
 // DOM 防抖，单位毫秒
-let throttleObserveDOM = throttle(observeDOM, 3000);
+let throttleObserveDOM = throttle(observeDOM, 1000);
 
 // endregion
 
@@ -79,6 +77,9 @@ let throttleObserveDOM = throttle(observeDOM, 3000);
     // 初始化逻辑
     init()
 
+    // 剪枝 set
+    let pruneSet = new Set();
+
     // 检查是否需要拉取数据
     checkRun(function (shouldRun) {
         // 如果 host 包含在 preread 中，shouldRun 为 true，则开始解析 DOM 树并设置监听器
@@ -87,11 +88,22 @@ let throttleObserveDOM = throttle(observeDOM, 3000);
             const observer = new MutationObserver(function (mutations, obs) {
                 mutations.forEach(mutation => {
                     if (isNull(mutation.target)) return;
-                    // console.log("变更记录: ", mutation.target);
-                    // 处理每个变更记录
-                    if (["div", "section","main","tbody","tr","td","button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
-                        handleDOMUpdate(mutation.target);
-                    }
+
+                    // console.log("原先变更记录：", mutation.target);
+
+                    signature(mutation.target.innerHTML).then((value) => {
+
+                        // Set 剪枝
+                        if (pruneSet.has(value)) return;
+
+                        pruneSet.add(value);
+                        console.log("变更记录：", value, " ：", mutation.target);
+
+                        // 处理每个变更记录
+                        if (["div", "section", "main", "tbody", "tr", "td", "button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
+                            handleDOMUpdate(mutation.target);
+                        }
+                    })
                 });
             });
             observer.observe(document.body, {childList: true, subtree: true});
@@ -255,7 +267,7 @@ function processInput(node, respMap) {
         }
     }
     // 2、如果存在 value 值（不应该修改 input 与 textarea 的 value 值）
-    if (node.tagName.toLowerCase() === "button" && node.value) {
+    if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) {
         let value = node.value.replace(/\u00A0/g, ' ').trim();
         if (value.length > 0 && withoutChinese(value)) {
             signature(url.host + value).then((value) => {
@@ -545,19 +557,6 @@ async function signature(text) {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex.slice(-20);
 }
-
-// 防抖函数
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-};
 
 function throttle(fn, interval) {
     // 维护上次执行的时间
