@@ -83,10 +83,8 @@ let pruneSet = new Set();
 
 (function () {
     'use strict';
-
-    // 初始化逻辑
+    // 初始化
     init()
-
     // 检查是否需要拉取数据
     checkRun(function (shouldRun) {
         // 如果 host 包含在 preread 中，shouldRun 为 true，则开始解析 DOM 树并设置监听器
@@ -246,9 +244,9 @@ function processInput(node, respMap) {
 
 // read：处理 aria-label 属性
 function processAriaLabel(node, respMap) {
-    let attribute = node.getAttribute('aria-label');    // 获取属性值
-    if (shouldPrune(attribute)) return;  // 剪枝：跳过已经处理的元素
-    let text = format(attribute)
+    let aria = node.getAttribute('aria-label');    // 获取属性值
+    if (shouldPrune(aria)) return;  // 剪枝：跳过已经处理的元素
+    let text = format(aria)
     if (text > 0 && NotChinese(text)) signature(url.host + text).then(value => respMap[value] ? replaceText(ariaLabel, node, respMap[value]) : null)
 }
 
@@ -480,15 +478,14 @@ function procDockerhub(node, respMap) {
 
 // 计算SHA-1散列，取最后20个字符
 async function signature(text) {
-    if (text === "") {
-        return "";
-    }
+    if (!text) return "";
     const hashBuffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex.slice(-20);
 }
 
+// 防抖限流函数
 function throttle(fn, interval) {
     // 维护上次执行的时间
     let last = 0;
@@ -517,11 +514,8 @@ function parseDateOrFalse(dateString) {
         return false;
     }
     const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-        return date; // 返回 Date 对象
-    } else {
-        return false; // 不是有效日期，返回 false
-    }
+    // 如果日期无效，返回 false
+    return !isNaN(date.getTime()) ? date : false;
 }
 
 // 判断字符串是否不包含中文
@@ -550,7 +544,7 @@ function replaceText(type, node, value) {
         case placeholder:
             node.placeholder = value;
             break;
-        case value:
+        case inputValue:
             node.value = value;
             break;
         case ariaLabel:
