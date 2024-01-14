@@ -39,8 +39,8 @@ const dependencyRegex = /(Test|Provided|Compile) Dependencies \((\d+)\)/; // "Co
 const rankRegex = /#(\d+) in\s*(.*)/; // "#3 in Algorithms"
 const artifactsRegex = /^([\d,]+)\s+artifacts$/; // "1,024 artifacts"
 const vulnerabilityRegex = /^(\d+)\s+vulnerabilit(y|ies)$/; // "3 vulnerabilities"
-const indexedRegex = /Indexed Artifacts \(([\d.]+)M\)/;   // Indexed Artifacts (1.2M)
-const repositoriesRegex = /Indexed Repositories \((\d+)\)/; //  Indexed Repositories (100)
+// const indexedRegex = /Indexed Artifacts \(([\d.]+)M\)/;   // Indexed Artifacts (1.2M)
+const repositoriesRegex = /Indexed (Repositories|Artifacts) \(([\d.]+)M?\)/; //  Indexed Repositories (100)
 const packagesRegex = /([\d,]+) indexed packages/;  // 12,795,152 indexed packages
 const joinedRegex = /Joined ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*\s\d{1,2},?\s\d{4}$)/;  // Joined March 27, 2022
 const moreRegex = /\+(\d+) more\.\.\./; // More 100
@@ -179,9 +179,7 @@ function observeDOM() {
 function parseDfs(node, respMap) {
     if (isEmpty(node)) return;
     // console.log("当前节点：", node)
-
     switch (node.nodeType) {
-        // TODO 全部改为 fn(node,respMap) 就行
         // 1、元素节点
         case Node.ELEMENT_NODE:
             // console.log("元素节点： ", node);
@@ -193,7 +191,7 @@ function parseDfs(node, respMap) {
             // 按钮与文本域节点
             if (["input", "button", "textarea"].includes(node.tagName.toLowerCase())) {
                 if (node.placeholder) processNode(node, placeholder, respMap);
-                if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) processNode(node, inputValue, respMap);
+                if (node.value && (node.tagName.toLowerCase() === "button" || ["submit", "button"].includes(node.type))) processNode(node, inputValue, respMap);
             }
             break;
         // 2、文本节点
@@ -211,25 +209,26 @@ function parseDfs(node, respMap) {
 
 function processNode(node, attr, respMap) {
     let text;
-    if (attr === textContent) {
-        text = node.textContent;
-    } else if (attr === placeholder) {
-        text = node.placeholder;
-    } else if (attr === inputValue) {
-        text = node.value;
-    } else if (attr === ariaLabel) {
-        text = node.getAttribute('aria-label');
+    switch (attr) {
+        case textContent:
+            text = node.textContent;
+            break;
+        case placeholder:
+            text = node.placeholder;
+            break;
+        case inputValue:
+            text = node.value;
+            break;
+        case ariaLabel:
+            text = node.getAttribute('aria-label');
+            break;
     }
 
     if (shouldPrune(text)) return;
 
     let formattedText = format(text);
-    if (formattedText.length > 0 && NotChinese(formattedText)) {
-        signature(url.host + formattedText).then(sign => {
-            if (respMap[sign]) {
-                replaceText(attr, node, respMap[sign]);
-            }
-        });
+    if (formattedText && NotChinese(formattedText)) {
+        signature(url.host + formattedText).then(sign => respMap[sign] ? replaceText(attr, node, respMap[sign]) : null)
     }
 }
 
@@ -315,7 +314,7 @@ function init() {
     adapterFnMap[nexusmods] = procNexusmods
     adapterFnMap[openai] = procOpenai
     adapterFnMap[chatGPT] = procChatGPT
-    // 填充跳过函数 map
+    // 填充 skip map
     skipStringMap[openai] = function (node) {
         return node.hasAttribute("data-message-author-role") || node.hasAttribute("data-projection-id")
     }
@@ -368,39 +367,33 @@ function procNexusmods(node, respMap) {
 }
 
 function procOpenai(node, respMap) {
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-
-    if (text.length > 0 && NotChinese(text)) {
-
+    let text = format(node.textContent);
+    if (text && NotChinese(text)) {
         let dateOrFalse = parseDateOrFalse(text);
         if (dateOrFalse) {
             node.textContent = `${dateOrFalse.getFullYear()}-${dateOrFalse.getMonth() + 1}-${dateOrFalse.getDate()}`;
             return;
         }
 
-        // 如果都不符合，进行普通哈希替换
         processNode(node, textContent, respMap);
     }
 }
 
 function procChatGPT(node, respMap) {
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-
-    if (text.length > 0 && NotChinese(text)) {
-
+    let text = format(node.textContent);
+    if (text && NotChinese(text)) {
         // 提取电子邮件地址
         let emailMatch = text.match(emailRegex);
         if (emailMatch) {
             node.textContent = `接收反馈邮件（${emailMatch[1]}）`;
             return;
         }
-
+        // 验证域名
         let verifyDomainMatch = text.match(verifyDomain);
         if (verifyDomainMatch) {
             node.textContent = `要验证 ${verifyDomainMatch[1]} 的所有权，请转到您的DNS提供商并添加一个带有以下值的TXT记录：`;
             return;
         }
-
         // 处理日期格式
         let dateOrFalse = parseDateOrFalse(text);
         if (dateOrFalse) {
@@ -408,7 +401,6 @@ function procChatGPT(node, respMap) {
             return;
         }
 
-        // 如果都不符合，进行普通哈希替换
         processNode(node, textContent, respMap);
     }
 }
@@ -416,45 +408,22 @@ function procChatGPT(node, respMap) {
 
 // 适配 maven
 function procMaven(node, respMap) {
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-
-    if (text.length > 0 && NotChinese(text)) {
-
+    let text = format(node.textContent);
+    if (text && NotChinese(text)) {
         // 处理 “Indexed Repositories (1936)”
         let repositoriesMatch = text.match(repositoriesRegex);
         if (repositoriesMatch) {
-            let count = parseInt(repositoriesMatch[1], 10);
-            node.textContent = `索引库数量（${count}）`;
+            let count = parseInt(repositoriesMatch[2], 10);
+            node.textContent = repositoriesMatch[1] === "Repositories" ? `索引库数量（${count}）` : `索引包数量（${count * 100}万）`;
             return;
         }
-
-        // 处理 “Indexed Artifacts (37.2M)”
-        let indexedMatch = text.match(indexedRegex);
-        if (indexedMatch) {
-            let count = parseFloat(indexedMatch[1]) * 100; // 将 M 转换为 万
-            node.textContent = `索引包数量 (${count.toLocaleString('en-US', {useGrouping: false})}万)`;
-            return;
-        }
-
         // 匹配并处理 "indexed packages" 的格式
         let packagesMatch = text.match(packagesRegex);
         if (packagesMatch) {
-            // 移除数字中的逗号，然后转换为整数
-            let count = parseInt(packagesMatch[1].replace(/,/g, ''), 10);
-            // 构建翻译后的字符串
-            text = `${count.toLocaleString()}个索引包`;
-            // 更新 DOM 节点的文本内容
-            node.textContent = text;
+            let count = parseInt(packagesMatch[1].replace(/,/g, ''), 10);   // 移除数字中的逗号，然后转换为整数
+            node.textContent = `${count.toLocaleString()}个索引包`;
             return;
         }
-
-        // 处理日期格式
-        let dateOrFalse = parseDateOrFalse(text);
-        if (dateOrFalse) {
-            node.textContent = `${dateOrFalse.getFullYear()}-${String(dateOrFalse.getMonth() + 1).padStart(2, '0')}-${String(dateOrFalse.getDate()).padStart(2, '0')}`;
-            return;
-        }
-
         // 处理“Last Release on”格式的日期
         let lastReleaseMatch = text.match(lastReleaseRegex);
         if (lastReleaseMatch) {
@@ -462,7 +431,12 @@ function procMaven(node, respMap) {
             node.textContent = `最近更新 ${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
             return;
         }
-
+        // 处理日期格式
+        let dateOrFalse = parseDateOrFalse(text);
+        if (dateOrFalse) {
+            node.textContent = `${dateOrFalse.getFullYear()}-${String(dateOrFalse.getMonth() + 1).padStart(2, '0')}-${String(dateOrFalse.getDate()).padStart(2, '0')}`;
+            return;
+        }
         // 处理依赖类型
         let dependencyMatch = text.match(dependencyRegex);
         if (dependencyMatch) {
@@ -470,21 +444,18 @@ function procMaven(node, respMap) {
             node.textContent = `${typeMap[type] || type}依赖 ${type} (${count})`;
             return;
         }
-
         // 处理排名
         let rankMatch = text.match(rankRegex);
         if (rankMatch) {
             node.textContent = `第 ${rankMatch[1]} 位 ${rankMatch[2]}`;
             return;
         }
-
         // 处理 artifacts 被引用次数
         let artifactsMatch = text.match(artifactsRegex);
         if (artifactsMatch) {
             node.textContent = `被引用 ${artifactsMatch[1]} 次`;
             return;
         }
-
         // 处理漏洞数量
         let vulnerabilityMatch = text.match(vulnerabilityRegex);
         if (vulnerabilityMatch) {
@@ -492,7 +463,6 @@ function procMaven(node, respMap) {
             return;
         }
 
-        // 如果都不符合，进行普通哈希替换
         processNode(node, textContent, respMap);
     }
 }
