@@ -330,29 +330,19 @@ function init() {
 
 // 适配 nexusmods
 function procNexusmods(node, respMap) {
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-    if (text.length > 0 && NotChinese(text)) {
-
+    let text = format(node.textContent)
+    if (text && NotChinese(text)) {
         // 使用正则表达式匹配 text
         let commentsMatch = text.match(commentsRegex);
         if (commentsMatch) {
-            // 提取数字部分
-            let count = parseInt(commentsMatch[1], 10);
-            // 构建中文翻译的字符串
-            node.textContent = `${count} 条评论`;
+            node.textContent = `${parseInt(commentsMatch[1], 10)} 条评论`;
             return;
         }
-
         // TODO 翻译不准确
-        // 使用正则表达式匹配文本
         let gamesMatch = text.match(gamesRegex);
         if (gamesMatch) {
-            // 提取数字部分
-            let count = gamesMatch[1];
-            // 判断是游戏还是收藏
-            let type = gamesMatch[2] === " games" ? "份游戏" : "个收藏";
-            // 构建中文翻译的字符串
-            node.textContent = `${count}${type}`;
+            let type = gamesMatch[2] === " games" ? "份游戏" : "个收藏";  // 判断是游戏还是收藏
+            node.textContent = `${gamesMatch[1]}${type}`;
             return;
         }
 
@@ -361,7 +351,6 @@ function procNexusmods(node, respMap) {
             node.textContent = `${dateOrFalse.getFullYear()}-${String(dateOrFalse.getMonth() + 1).padStart(2, '0')}-${String(dateOrFalse.getDate()).padStart(2, '0')}`
         }
 
-        // 如果都不符合，进行普通哈希替换
         processNode(node, textContent, respMap);
     }
 }
@@ -468,34 +457,26 @@ function procMaven(node, respMap) {
 }
 
 function procDockerhub(node, respMap) {
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-
-    if (text.length > 0 && NotChinese(text)) {
-
+    let text = format(node.textContent);
+    if (text && NotChinese(text)) {
         // 处理更新时间的翻译
         let timeMatch = text.match(timeRegex);
         if (timeMatch) {
             let [_, quantity, unit, isPlural] = timeMatch;
-            // 将 'a' 或 'an' 转换为 '1'
-            quantity = (quantity === 'a' || quantity === 'an') ? ' 1' : ` ${quantity}`;
-            // 单位转换
-            const unitMap = {'minute': '分钟', 'hour': '小时', 'day': '天', 'month': '月',};
+            quantity = (quantity === 'a' || quantity === 'an') ? ' 1' : ` ${quantity}`; // 将 'a' 或 'an' 转换为 '1'
+            const unitMap = {'minute': '分钟', 'hour': '小时', 'day': '天', 'month': '月',};  // 单位转换
             unit = unitMap[unit] || unit;
-            // 构建新的文本格式
             node.textContent = `${quantity} ${unit}之前`;
             return;
         }
-
         // 处理分页信息的翻译
         let paginationMatch = text.match(paginationRegex);
         if (paginationMatch) {
             let [_, start, end, total] = paginationMatch;
             total = total.replace(/,/g, ''); // 去除数字中的逗号
-            // 构建新的文本格式
             node.textContent = `当前第 ${start} - ${end} 项，共 ${total} `;
             return;
         }
-
         // 处理 "Joined March 27, 2022"
         let joinedMatch = text.match(joinedRegex);
         if (joinedMatch) {
@@ -503,15 +484,13 @@ function procDockerhub(node, respMap) {
             node.textContent = `加入时间：${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             return;
         }
-
         // 处理 "+5 more..."
         let moreMatch = text.match(moreRegex);
         if (moreMatch) {
-            let count = parseInt(moreMatch[1], 10);
-            node.textContent = `还有${count}个更多...`;
+            node.textContent = `还有${parseInt(moreMatch[1], 10)}个更多...`;
             return;
         }
-        // 如果都不符合，则进行普通哈希替换
+
         processNode(node, textContent, respMap);
     }
 }
