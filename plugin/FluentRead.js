@@ -23,21 +23,14 @@
 
 // URL 相关
 const POST = "POST";
-let url = new URL(location.href.split('?')[0]);
-
-// cacheKey
+const url = new URL(location.href.split('?')[0]);
+// cacheKey 与 时间
 const checkKey = "fluent_read_check";
-
-// 时间
 const expiringTime = 86400000 / 4;
-
 // 服务请求地址
-let source = "http://127.0.0.1"
-// let source = "https://fr.unmeta.cn"
+const source = "http://127.0.0.1"
+// const source = "https://fr.unmeta.cn"
 const read = "%s/read".replace("%s", source), preread = "%s/preread".replace("%s", source);
-// 其余常量
-const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
-
 // 预编译正则表达式
 const timeRegex = /^(a|an|\d+)\s+(minute|hour|day|month|year)(s)?\s+ago$/; // "2 days ago"
 const paginationRegex = /^(\d+)\s*-\s*(\d+)\s+of\s+([\d,]+)$/; // "10 - 20 of 300"
@@ -56,28 +49,26 @@ const gamesRegex = /(\d{1,3}(?:,\d{3})*)( games| Collections)/;
 const combinedDateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*\s\d{1,2},?\s\d{4}$|^\d{1,2}\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*,?\s\d{4}$|^\d{1,2}\/\d{1,2}\/\d{4}$/i;
 const emailRegex = /^Receive feedback emails \((.*)\)$/;
 const verifyDomain = /To verify ownership of (.*), navigate to your DNS provider and add a TXT record with this value:/
-
 // 特例适配
 const maven = "mvnrepository.com";
 const docker = "hub.docker.com";
 const nexusmods = "www.nexusmods.com"
 const openai = "openai.com"
 const chatGPT = "chat.openai.com"
-
 // 文本类型
 const textContent = 0
 const placeholder = 1
 const inputValue = 2
 const ariaLabel = 3
-
+// 适配器与剪枝 map
 let adapterFnMap = new (Map);
-const skipStringMap = new Map();
-
+let skipStringMap = new Map();
 // DOM 防抖，单位毫秒
 let throttleObserveDOM = throttle(observeDOM, 3000);
-
 // 剪枝 set
 let pruneSet = new Set();
+// 其余常量
+const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
 
 // endregion
 
@@ -92,7 +83,7 @@ let pruneSet = new Set();
             // 1、添加监听器，使用 MutationObserver 监听 DOM 变化
             const observer = new MutationObserver(function (mutations, obs) {
                 mutations.forEach(mutation => {
-                    if (isNull(mutation.target)) return;
+                    if (isEmpty(mutation.target)) return;
                     // console.log("原先变更记录：", mutation.target);
                     // 如果不包含下面节点，则处理
                     if (!["img", "noscript"].includes(mutation.target.tagName.toLowerCase())) {
@@ -132,7 +123,7 @@ function checkRun(callback) {
     const lastRun = GM_getValue("lastRun", undefined);
     const now = new Date().getTime();
 
-    if (isNull(lastRun) || now - lastRun > expiringTime) {
+    if (isEmpty(lastRun) || now - lastRun > expiringTime) {
         console.log("开始更新 preread 缓存");
         GM_xmlhttpRequest({
             method: POST,
@@ -186,32 +177,31 @@ function observeDOM() {
 
 // read：递归提取节点文本
 function parseDfs(node, respMap) {
-    if (isNull(node)) return;
+    if (isEmpty(node)) return;
     // console.log("当前节点：", node)
 
     switch (node.nodeType) {
+        // TODO 全部改为 fn(node,respMap) 就行
         // 1、元素节点
         case Node.ELEMENT_NODE:
             // console.log("元素节点： ", node);
-            let skipFn = skipStringMap[url.host];   // 根据 host 获取 skip 函数，判断是否需要跳过
-            if (skipFn && skipFn(node)) {
-                return;
-            }
-            if (node.hasAttribute("aria-label")) {
-                processAriaLabel(node, respMap)
-            }
+            // 根据 host 获取 skip 函数，判断是否需要跳过
+            let skipFn = skipStringMap[url.host];
+            if (skipFn && skipFn(node)) return;
+            // aria 提示信息
+            if (node.hasAttribute("aria-label")) processNode(node, ariaLabel, respMap);
             // 按钮与文本域节点
             if (["input", "button", "textarea"].includes(node.tagName.toLowerCase())) {
-                processInput(node, respMap);
+                if (node.placeholder) processNode(node, placeholder, respMap);
+                if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) processNode(node, inputValue, respMap);
             }
             break;
-        // 2、文本节点（文本节点之后再无子节点，return）
+        // 2、文本节点
         case  Node.TEXT_NODE:
             let fn = adapterFnMap[url.host];    // 根据 host 获取 adapter 函数，判断是否需要特殊处理
-            isNull(fn) ? procPlain(node, respMap) : fn(node, respMap);
-            return;
+            isEmpty(fn) ? processNode(node, textContent, respMap) : fn(node, respMap);
+            return; // 文本节点无子节点，return
     }
-
     let child = node.firstChild;
     while (child) {
         parseDfs(child, respMap);
@@ -219,38 +209,123 @@ function parseDfs(node, respMap) {
     }
 }
 
-// read：处理文本内容
-function procPlain(node, respMap) {
-    if (shouldPrune(node.textContent)) return;  // 剪枝：跳过已经处理的元素
-    let text = format(node.textContent);
-    if (text.length > 0 && NotChinese(text)) signature(url.host + text).then(sign => respMap[sign] ? replaceText(textContent, node, respMap[sign]) : null);
-}
-
-// read：处理 input 与文本域的 placeholder
-function processInput(node, respMap) {
-    // 1、如果存在 placeholder 值
-    if (node.placeholder) {
-        if (shouldPrune(node.placeholder)) return;  // 剪枝：跳过已经处理的元素
-        let text = format(node.placeholder);
-        if (text.length > 0 && NotChinese(text)) signature(url.host + text).then(sign => respMap[sign] ? replaceText(placeholder, node, respMap[sign]) : null)
+function processNode(node, attr, respMap) {
+    let text;
+    if (attr === textContent) {
+        text = node.textContent;
+    } else if (attr === placeholder) {
+        text = node.placeholder;
+    } else if (attr === inputValue) {
+        text = node.value;
+    } else if (attr === ariaLabel) {
+        text = node.getAttribute('aria-label');
     }
-    // 2、如果存在 value 值（不应该修改 input 与 textarea 的 value 值）
-    if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) {
-        if (shouldPrune(node.value)) return;  // 剪枝：跳过已经处理的元素
-        let text = format(node.value)
-        if (text.length > 0 && NotChinese(text)) signature(url.host + text).then(sign => respMap[sign] ? replaceText(inputValue, node, respMap[sign]) : null)
-    }
-}
 
-// read：处理 aria-label 属性
-function processAriaLabel(node, respMap) {
-    let aria = node.getAttribute('aria-label');    // 获取属性值
-    if (shouldPrune(aria)) return;  // 剪枝：跳过已经处理的元素
-    let text = format(aria)
-    if (text > 0 && NotChinese(text)) signature(url.host + text).then(value => respMap[value] ? replaceText(ariaLabel, node, respMap[value]) : null)
+    if (shouldPrune(text)) return;
+
+    let formattedText = format(text);
+    if (formattedText.length > 0 && NotChinese(formattedText)) {
+        signature(url.host + formattedText).then(sign => {
+            if (respMap[sign]) {
+                replaceText(attr, node, respMap[sign]);
+            }
+        });
+    }
 }
 
 // endregion
+
+// region 通用函数
+// 计算SHA-1散列，取最后20个字符
+async function signature(text) {
+    if (!text) return "";
+    const hashBuffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.slice(-20);
+}
+
+// 防抖限流函数
+function throttle(fn, interval) {
+    let last = 0;   // 维护上次执行的时间
+    return function () {
+        const now = Date.now();
+        // 根据当前时间和上次执行时间的差值判断是否频繁
+        if (now - last >= interval) {
+            last = now;
+            fn();
+        }
+    };
+}
+
+// 判断是否为空元素
+function isEmpty(node) {
+    return node ? false : true;
+}
+
+// 验证并解析日期格式，如果格式不正确则返回false
+function parseDateOrFalse(dateString) {
+    // 正则表达式，用于检查常见的日期格式（如 YYYY-MM-DD）
+    if (!combinedDateRegex.test(dateString)) return false;
+    // 尝试解析日期，如果无效返回 false
+    const date = new Date(dateString);
+    return !isNaN(date.getTime()) ? date : false;
+}
+
+// 判断字符串是否不包含中文
+function NotChinese(text) {
+    return !/[\u4e00-\u9fa5]/.test(text);
+}
+
+// 判断是否应该剪枝
+function shouldPrune(text) {
+    let has = pruneSet.has(text);
+    if (has) console.log("已处理的节点，跳过：", text)
+    return has;
+}
+
+// 文本格式化
+function format(text) {
+    return text.replace(/\u00A0/g, ' ').trim();
+}
+
+// 替换文本
+function replaceText(type, node, value) {
+    switch (type) {
+        case textContent:
+            node.textContent = value;
+            break;
+        case placeholder:
+            node.placeholder = value;
+            break;
+        case inputValue:
+            node.value = value;
+            break;
+        case ariaLabel:
+            node.setAttribute('aria-label', value);
+            break;
+    }
+    pruneSet.add(value)    // 剪枝
+}
+
+function init() {
+    // 填充适配器 map
+    adapterFnMap[maven] = procMaven
+    adapterFnMap[docker] = procDockerhub
+    adapterFnMap[nexusmods] = procNexusmods
+    adapterFnMap[openai] = procOpenai
+    adapterFnMap[chatGPT] = procChatGPT
+    // 填充跳过函数 map
+    skipStringMap[openai] = function (node) {
+        return node.hasAttribute("data-message-author-role") || node.hasAttribute("data-projection-id")
+    }
+    skipStringMap[nexusmods] = function (node) {
+        return node.classList.contains("desc") || node.classList.contains("material-icons") || node.classList.contains("material-icons-outlined")
+    }
+}
+
+// endregion
+
 
 // region 第三方特例
 
@@ -288,7 +363,7 @@ function procNexusmods(node, respMap) {
         }
 
         // 如果都不符合，进行普通哈希替换
-        procPlain(node, respMap);
+        processNode(node, textContent, respMap);
     }
 }
 
@@ -304,7 +379,7 @@ function procOpenai(node, respMap) {
         }
 
         // 如果都不符合，进行普通哈希替换
-        procPlain(node, respMap);
+        processNode(node, textContent, respMap);
     }
 }
 
@@ -334,7 +409,7 @@ function procChatGPT(node, respMap) {
         }
 
         // 如果都不符合，进行普通哈希替换
-        procPlain(node, respMap);
+        processNode(node, textContent, respMap);
     }
 }
 
@@ -418,7 +493,7 @@ function procMaven(node, respMap) {
         }
 
         // 如果都不符合，进行普通哈希替换
-        procPlain(node, respMap);
+        processNode(node, textContent, respMap);
     }
 }
 
@@ -467,107 +542,7 @@ function procDockerhub(node, respMap) {
             return;
         }
         // 如果都不符合，则进行普通哈希替换
-        procPlain(node, respMap);
-    }
-}
-
-// endregion
-
-
-// region 通用函数
-
-// 计算SHA-1散列，取最后20个字符
-async function signature(text) {
-    if (!text) return "";
-    const hashBuffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex.slice(-20);
-}
-
-// 防抖限流函数
-function throttle(fn, interval) {
-    // 维护上次执行的时间
-    let last = 0;
-    return function () {
-        const now = Date.now();
-        // 根据当前时间和上次执行时间的差值判断是否频繁
-        if (now - last >= interval) {
-            last = now;
-            fn();
-        }
-    };
-}
-
-// 判断是否为空元素
-function isNull(node) {
-    if (node === null || node === undefined) {
-        return true
-    }
-    return false
-}
-
-// 验证并解析日期格式，如果格式不正确则返回false
-function parseDateOrFalse(dateString) {
-    // 正则表达式，用于检查常见的日期格式（如 YYYY-MM-DD）
-    if (!combinedDateRegex.test(dateString)) {
-        return false;
-    }
-    const date = new Date(dateString);
-    // 如果日期无效，返回 false
-    return !isNaN(date.getTime()) ? date : false;
-}
-
-// 判断字符串是否不包含中文
-function NotChinese(text) {
-    return !/[\u4e00-\u9fa5]/.test(text);
-}
-
-// 判断是否应该剪枝
-function shouldPrune(text) {
-    let has = pruneSet.has(text);
-    if (has) console.log("已处理的节点，跳过：", text)
-    return has;
-}
-
-// 文本格式化
-function format(text) {
-    return text.replace(/\u00A0/g, ' ').trim();
-}
-
-// 替换文本
-function replaceText(type, node, value) {
-    switch (type) {
-        case textContent:
-            node.textContent = value;
-            break;
-        case placeholder:
-            node.placeholder = value;
-            break;
-        case inputValue:
-            node.value = value;
-            break;
-        case ariaLabel:
-            node.setAttribute('aria-label', value);
-            break;
-    }
-    pruneSet.add(value)    // 剪枝
-}
-
-// 初始化函数
-function init() {
-    adapterFnMap[maven] = procMaven
-    adapterFnMap[docker] = procDockerhub
-    adapterFnMap[nexusmods] = procNexusmods
-    adapterFnMap[openai] = procOpenai
-    adapterFnMap[chatGPT] = procChatGPT
-
-    skipStringMap[openai] = function (node) {
-        return node.hasAttribute("data-message-author-role") || node.hasAttribute("data-projection-id")
-    }
-    // TODO 未完成
-    skipStringMap[nexusmods] = function (node) {
-        return node.classList.contains("desc") || node.classList.contains("material-icons") || node.classList.contains("material-icons-outlined")
+        processNode(node, textContent, respMap);
     }
 }
 
