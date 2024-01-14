@@ -243,12 +243,17 @@ function isSkip(node) {
 function processInput(node, respMap) {
     // 1、如果存在 placeholder 值
     if (node.placeholder) {
-        let placeholder = node.placeholder.replace(/\u00A0/g, ' ').trim();
-        // 剪枝：跳过已经处理的 text 元素
-        if (pruneSet.has(placeholder)) {
-            console.log("已处理的 placeholder，跳过：", placeholder)
+        // 跳过中文节点
+        if (!withoutChinese(node.placeholder)) {
             return;
         }
+        // 剪枝：跳过已经处理的 text 元素
+        if (pruneSet.has(node.placeholder)) {
+            console.log("已处理的 placeholder，跳过：", node.placeholder)
+            return;
+        }
+
+        let placeholder = node.placeholder.replace(/\u00A0/g, ' ').trim();
         if (placeholder.length > 0 && withoutChinese(placeholder)) {
             signature(url.host + placeholder).then((value) => {
                 // respMap[signature] 不为空则替换原文本
@@ -263,12 +268,16 @@ function processInput(node, respMap) {
     }
     // 2、如果存在 value 值（不应该修改 input 与 textarea 的 value 值）
     if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) {
-        let value = node.value.replace(/\u00A0/g, ' ').trim();
-        // 剪枝：跳过已经处理的 text 元素
-        if (pruneSet.has(value)) {
-            console.log("已处理的按钮 value，跳过：", value)
+        // 跳过中文节点
+        if (!withoutChinese(node.value)) {
             return;
         }
+        // 剪枝：跳过已经处理的 text 元素
+        if (pruneSet.has(node.value)) {
+            console.log("已处理的按钮 value，跳过：", node.value)
+            return;
+        }
+        let value = node.value.replace(/\u00A0/g, ' ').trim();
         if (value.length > 0 && withoutChinese(value)) {
             signature(url.host + value).then((value) => {
                 // respMap[signature] 不为空则替换原文本
@@ -285,12 +294,16 @@ function processInput(node, respMap) {
 
 // read：处理文本内容
 function procPlain(node, respMap) {
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-    // 剪枝：跳过已经处理的 text 元素
-    if (pruneSet.has(text)) {
-        console.log("已处理的 text，跳过：", text)
+    // 跳过中文节点
+    if (!withoutChinese(node.textContent)) {
         return;
     }
+    // 剪枝：跳过已经处理的 text 元素
+    if (pruneSet.has(node.textContent)) {
+        console.log("已处理的 text，跳过：", node.textContent)
+        return;
+    }
+    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
     if (text.length > 0 && withoutChinese(text)) {
         signature(url.host + text).then((value) => {
             // 添加一个检查以确保 respMap 是有效的
@@ -306,12 +319,17 @@ function procPlain(node, respMap) {
 
 // read：处理 aria-label 属性
 function processAriaLabel(node, respMap) {
-    let ariaLabel = node.getAttribute('aria-label').replace(/\u00A0/g, ' ').trim();
-    // 剪枝：跳过已经处理的 text 元素
-    if (pruneSet.has(ariaLabel)) {
-        console.log("已处理的 ariaLabel，跳过：", ariaLabel)
+    // 跳过中文节点
+    if (!withoutChinese(node.getAttribute('aria-label'))) {
         return;
     }
+    // 剪枝：跳过已经处理的 text 元素
+    let attribute = node.getAttribute('aria-label');
+    if (pruneSet.has(attribute)) {
+        console.log("已处理的 ariaLabel，跳过：", attribute)
+        return;
+    }
+    let ariaLabel = attribute.replace(/\u00A0/g, ' ').trim();
     if (ariaLabel) {
         if (ariaLabel.length > 0 && withoutChinese(ariaLabel)) {
             signature(url.host + ariaLabel).then((value) => {
@@ -587,6 +605,24 @@ function isNull(node) {
         return true
     }
     return false
+}
+
+// 判断是否为非中文
+function isNonChinese(text) {
+    for (let i = 0; i < text.length; i++) {
+        const char = text.charCodeAt(i);
+        if ((char >= 0x4E00 && char <= 0x9FFF) ||
+            (char >= 0x3400 && char <= 0x4DBF) ||
+            (char >= 0x20000 && char <= 0x2A6DF) ||
+            (char >= 0x2A700 && char <= 0x2B73F) ||
+            (char >= 0x2B740 && char <= 0x2B81F) ||
+            (char >= 0x2B820 && char <= 0x2CEAF) ||
+            (char >= 0xF900 && char <= 0xFAFF) ||
+            (char >= 0x2F800 && char <= 0x2FA1F)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // 验证并解析日期格式，如果格式不正确则返回false
