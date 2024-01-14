@@ -2,7 +2,7 @@
 // @name         流畅阅读
 // @license      GPL-3.0 license
 // @namespace    https://fr.unmeta.cn/
-// @version      0.3
+// @version      0.4
 // @description  基于上下文语境的人工智能翻译引擎，为部分网站提供精准翻译，让所有人都能够拥有基于母语般的阅读体验。程序Github开源：https://github.com/Bistutu/FluentRead，欢迎 star。
 // @author       ThinkStu
 // @match        *://*/*
@@ -28,8 +28,8 @@ const url = new URL(location.href.split('?')[0]);
 const checkKey = "fluent_read_check";
 const expiringTime = 86400000 / 4;
 // 服务请求地址
-const source = "http://127.0.0.1"
-// const source = "https://fr.unmeta.cn"
+// const source = "http://127.0.0.1"
+const source = "https://fr.unmeta.cn"
 const read = "%s/read".replace("%s", source), preread = "%s/preread".replace("%s", source);
 // 预编译正则表达式
 const timeRegex = /^(a|an|\d+)\s+(minute|hour|day|month|year)(s)?\s+ago$/; // "2 days ago"
@@ -39,7 +39,6 @@ const dependencyRegex = /(Test|Provided|Compile) Dependencies \((\d+)\)/; // "Co
 const rankRegex = /#(\d+) in\s*(.*)/; // "#3 in Algorithms"
 const artifactsRegex = /^([\d,]+)\s+artifacts$/; // "1,024 artifacts"
 const vulnerabilityRegex = /^(\d+)\s+vulnerabilit(y|ies)$/; // "3 vulnerabilities"
-// const indexedRegex = /Indexed Artifacts \(([\d.]+)M\)/;   // Indexed Artifacts (1.2M)
 const repositoriesRegex = /Indexed (Repositories|Artifacts) \(([\d.]+)M?\)/; //  Indexed Repositories (100)
 const packagesRegex = /([\d,]+) indexed packages/;  // 12,795,152 indexed packages
 const joinedRegex = /Joined ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*\s\d{1,2},?\s\d{4}$)/;  // Joined March 27, 2022
@@ -49,12 +48,14 @@ const gamesRegex = /(\d{1,3}(?:,\d{3})*)( games| Collections)/;
 const combinedDateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*\s\d{1,2},?\s\d{4}$|^\d{1,2}\s(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*,?\s\d{4}$|^\d{1,2}\/\d{1,2}\/\d{4}$/i;
 const emailRegex = /^Receive feedback emails \((.*)\)$/;
 const verifyDomain = /To verify ownership of (.*), navigate to your DNS provider and add a TXT record with this value:/
+const autoSavedRegex = /Auto-saved (\d{2}):(\d{2}):(\d{2})/;
 // 特例适配
 const maven = "mvnrepository.com";
 const docker = "hub.docker.com";
 const nexusmods = "www.nexusmods.com"
 const openai = "openai.com"
 const chatGPT = "chat.openai.com"
+const coze = "www.coze.com"
 // 文本类型
 const textContent = 0
 const placeholder = 1
@@ -314,6 +315,7 @@ function init() {
     adapterFnMap[nexusmods] = procNexusmods
     adapterFnMap[openai] = procOpenai
     adapterFnMap[chatGPT] = procChatGPT
+    adapterFnMap[coze] = procCoze
     // 填充 skip map
     skipStringMap[openai] = function (node) {
         return node.hasAttribute("data-message-author-role") || node.hasAttribute("data-projection-id")
@@ -321,12 +323,33 @@ function init() {
     skipStringMap[nexusmods] = function (node) {
         return node.classList.contains("desc") || node.classList.contains("material-icons") || node.classList.contains("material-icons-outlined")
     }
+    skipStringMap[coze] = function (node) {
+        return node.classList.contains("auto-hide-last-sibling-br")
+            || node.classList.contains("jwzzTyL0ME4eVCKuxpDL")
+            || node.classList.contains("XnSvnXQFZ4QHrFiqJPSG")
+            || node.classList.contains("NcsIaDLOKk0l8CjedpJc")
+    }
 }
 
 // endregion
 
 
 // region 第三方特例
+
+// 适配 coze
+function procCoze(node, respMap) {
+    let text = format(node.textContent);
+    if (text && NotChinese(text)) {
+        // "Auto-saved 21:28:58"
+        let autoSavedMatch = text.match(autoSavedRegex);
+        if (autoSavedMatch) {
+            node.textContent = `自动保存于 ${autoSavedMatch[1]}:${autoSavedMatch[2]}:${autoSavedMatch[3]}`;
+            return;
+        }
+
+        processNode(node, textContent, respMap);
+    }
+}
 
 // 适配 nexusmods
 function procNexusmods(node, respMap) {
@@ -338,7 +361,7 @@ function procNexusmods(node, respMap) {
             node.textContent = `${parseInt(commentsMatch[1], 10)} 条评论`;
             return;
         }
-        // TODO 翻译不准确
+        // TODO 翻译待修正
         let gamesMatch = text.match(gamesRegex);
         if (gamesMatch) {
             let type = gamesMatch[2] === " games" ? "份游戏" : "个收藏";  // 判断是游戏还是收藏
@@ -399,7 +422,7 @@ function procChatGPT(node, respMap) {
 function procMaven(node, respMap) {
     let text = format(node.textContent);
     if (text && NotChinese(text)) {
-        // 处理 “Indexed Repositories (1936)”
+        // 处理 “Indexed Repositories (1936)” 与 “Indexed Artifacts (1.2M)” 的格式
         let repositoriesMatch = text.match(repositoriesRegex);
         if (repositoriesMatch) {
             let count = parseInt(repositoriesMatch[2], 10);
