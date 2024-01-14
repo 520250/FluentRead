@@ -58,13 +58,14 @@ const emailRegex = /^Receive feedback emails \((.*)\)$/;
 const verifyDomain = /To verify ownership of (.*), navigate to your DNS provider and add a TXT record with this value:/
 
 // 特例适配
-const Maven = "mvnrepository.com";
-const DockerHub = "hub.docker.com";
-const Nexusmods = "www.nexusmods.com"
+const maven = "mvnrepository.com";
+const docker = "hub.docker.com";
+const nexusmods = "www.nexusmods.com"
 const openai = "openai.com"
 const chatGPT = "chat.openai.com"
 
-let adapterMap = new (Map);
+let adapterFnMap = new (Map);
+const skipStringMap = new Map();
 
 // DOM 防抖，单位毫秒
 let throttleObserveDOM = throttle(observeDOM, 3000);
@@ -89,7 +90,8 @@ let pruneSet = new Set();
                 mutations.forEach(mutation => {
                     if (isNull(mutation.target)) return;
                     // console.log("原先变更记录：", mutation.target);
-                    if (["div", "section", "main", "tbody", "tr", "td", "button", "svg", "span", "nav", "body", "label"].includes(mutation.target.tagName.toLowerCase())) {
+                    // 如果不包含下面节点，则处理
+                    if (!["img", "noscript"].includes(mutation.target.tagName.toLowerCase())) {
                         handleDOMUpdate(mutation.target);
                     }
                 });
@@ -198,14 +200,16 @@ function parseDfs(node, respMap) {
     }
     // console.log("当前节点：", node)
 
+
     switch (node.nodeType) {
         // 1、元素节点
         case Node.ELEMENT_NODE:
-            // console.log("元素节点： ", node);
-            if (["head", "path", "script", "style", "img", "noscript"].includes(node.tagName.toLowerCase()) || isSkip(node)) {
-                // console.log("忽略节点: ", node);
+            // TODO 根据网址判断该 node 是否需要跳过
+            let skipFn = skipStringMap[url.host];
+            if (skipFn && skipFn(node)) {
                 return;
             }
+            // console.log("元素节点： ", node);
             if (node.hasAttribute("aria-label")) {
                 processAriaLabel(node, respMap)
             }
@@ -214,11 +218,10 @@ function parseDfs(node, respMap) {
                 processInput(node, respMap);
             }
             break;
-        // 2、文本节点
+        // 2、文本节点（文本节点之后再无子节点，return）
         case  Node.TEXT_NODE:
-            // console.log("文本节点：", node);
             // 如果存在适配的第三方方法，则使用
-            let fn = adapterMap[url.host];
+            let fn = adapterFnMap[url.host];
             isNull(fn) ? procPlain(node, respMap) : fn(node, respMap);
             return;
     }
@@ -228,15 +231,6 @@ function parseDfs(node, respMap) {
         parseDfs(child, respMap);
         child = child.nextSibling;
     }
-}
-
-// read：判断具有特殊属性的节点是否应该被跳过
-function isSkip(node) {
-    return node.classList.contains("s-post-summary--content")   // 兼容 openai
-        || node.classList.contains("thread-item")
-        || node.hasAttribute("data-message-author-role")
-        // 适配 nexusmods
-        || node.classList.contains("desc")
 }
 
 // read：处理 input 与文本域的 placeholder
@@ -641,11 +635,19 @@ function parseDateOrFalse(dateString) {
 
 // 初始化函数
 function init() {
-    adapterMap[Maven] = procMaven
-    adapterMap[DockerHub] = procDockerhub
-    adapterMap[Nexusmods] = procNexusmods
-    adapterMap[openai] = procOpenai
-    adapterMap[chatGPT] = procChatGPT
+    adapterFnMap[maven] = procMaven
+    adapterFnMap[docker] = procDockerhub
+    adapterFnMap[nexusmods] = procNexusmods
+    adapterFnMap[openai] = procOpenai
+    adapterFnMap[chatGPT] = procChatGPT
+
+    skipStringMap[openai] = function (node) {
+        return node.hasAttribute("data-message-author-role") || node.hasAttribute("data-projection-id")
+    }
+    // TODO 未完成
+    skipStringMap[nexusmods] = function (node) {
+        return node.classList.contains("desc") || node.classList.contains("material-icons")||node.classList.contains("material-icons-outlined")
+    }
 }
 
 // endregion
