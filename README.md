@@ -1,4 +1,5 @@
 # 流畅阅读，下一代翻译引擎
+
 > Fluent Read，基于母语般的阅读体验
 >
 
@@ -21,6 +22,7 @@
 4. Maven 仓库：[mvnrepository.com](https://mvnrepository.com/)
 5. Stackoverflow：[stackoverflow.com](https://stackoverflow.com/)
 6. GitHub Star 趋势生成网：[star-history.com](https://star-history.com/)
+7. coze人工智能助手：[www.coze.com](https://www.coze.com)
 
 # 如何参与开源项目？
 
@@ -38,7 +40,6 @@ go build &&./FluentRead
 # 许可证
 
 [GPL-3.0 license](https://github.com/Bistutu/FluentRead#)
-
 
 # star 历史记录
 

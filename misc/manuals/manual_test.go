@@ -29,10 +29,10 @@ var (
 		//"https://mvnrepository.com/artifact/com.alibaba/fastjson/2.0.44",
 		//"https://help.openai.com/en/articles/8554397-creating-a-gpt",
 		//"https://platform.openai.com/docs/overview",
-		//"https://mvnrepository.com/repos",
+		"https://mvnrepository.com/repos",
 		//"https://www.nexusmods.com/",
 		//"https://users.nexusmods.com/",
-		"https://www.coze.com/space/7313028917407842311/plugin",
+		//"https://www.coze.com/space/7313028917407842311/plugin",
 	)
 )
 
