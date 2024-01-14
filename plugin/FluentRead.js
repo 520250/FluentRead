@@ -64,6 +64,12 @@ const nexusmods = "www.nexusmods.com"
 const openai = "openai.com"
 const chatGPT = "chat.openai.com"
 
+// 文本类型
+const textContent = 0
+const placeholder = 1
+const inputValue = 2
+const ariaLabel = 3
+
 let adapterFnMap = new (Map);
 const skipStringMap = new Map();
 
@@ -122,7 +128,6 @@ function checkRun(callback) {
     let pageMapCache = GM_getValue(checkKey, false);
     if (pageMapCache) {
         pageMapCache[url.host] ? callback(true) : callback(false);
-        // return;
     }
 
     // 2、网络请求
@@ -136,13 +141,10 @@ function checkRun(callback) {
             url: preread,
             onload: function (response) {
                 // pagesMap 是新获取的数据，pageMapCache 是从缓存中获取的旧数据
-                const pagesMap = JSON.parse(response.responseText).Data;
-
+                let pagesMap = JSON.parse(response.responseText).Data;
                 pagesMap[url.host] ? callback(true) : callback(false);
-
                 // 将 fluent_read_check 设置为新的缓存
                 GM_setValue(checkKey, pagesMap);
-
                 // 检查 preread 名单判断是否需要更新对应 host 的 read 数据
                 const listValues = GM_listValues();
                 listValues.forEach(host => {
@@ -151,34 +153,26 @@ function checkRun(callback) {
                         console.log("删除过期的缓存数据：", host);
                     }
                 });
-
+                GM_setValue("lastRun", now.toString()); // 请求成功后设置当前时间
             },
             onerror: (error) => console.error("请求失败: ", error)
         });
-
-        GM_setValue("lastRun", now.toString()); // 设置当前时间
     }
 }
 
 // read：处理 DOM 更新
 function handleDOMUpdate(node) {
+    // 如果数据存在则直接解析，否则发起网络请求
     let cachedData = GM_getValue(url.host, undefined);
-    // 如果对应 host 的数据存在，则直接使用解析 parseDfs解析，否则发送网络请求（同时防抖动）
-    if (!isNull(cachedData)) {
-        parseDfs(node, cachedData);
-    } else {
-        // 防抖包装观察函数
-        throttleObserveDOM()
-    }
+    cachedData ? parseDfs(node, cachedData) : throttleObserveDOM();
 }
 
 // read：监听器配置
 function observeDOM() {
-    let param = {page: url.origin};
     GM_xmlhttpRequest({
         method: POST,
         url: read,
-        data: JSON.stringify(param),
+        data: JSON.stringify({page: url.origin}),   // 请求参数
         onload: function (response) {
             console.log("新的 read 请求：", url.host);
 
@@ -192,24 +186,19 @@ function observeDOM() {
     });
 }
 
-// read：递归提取节点的文本内容
+// read：递归提取节点文本
 function parseDfs(node, respMap) {
-    // 检查node是否为null
-    if (isNull(node)) {
-        return;
-    }
+    if (isNull(node)) return;
     // console.log("当前节点：", node)
-
 
     switch (node.nodeType) {
         // 1、元素节点
         case Node.ELEMENT_NODE:
-            // TODO 根据网址判断该 node 是否需要跳过
-            let skipFn = skipStringMap[url.host];
+            // console.log("元素节点： ", node);
+            let skipFn = skipStringMap[url.host];   // 根据 host 获取 skip 函数，判断是否需要跳过
             if (skipFn && skipFn(node)) {
                 return;
             }
-            // console.log("元素节点： ", node);
             if (node.hasAttribute("aria-label")) {
                 processAriaLabel(node, respMap)
             }
@@ -220,8 +209,7 @@ function parseDfs(node, respMap) {
             break;
         // 2、文本节点（文本节点之后再无子节点，return）
         case  Node.TEXT_NODE:
-            // 如果存在适配的第三方方法，则使用
-            let fn = adapterFnMap[url.host];
+            let fn = adapterFnMap[url.host];    // 根据 host 获取 adapter 函数，判断是否需要特殊处理
             isNull(fn) ? procPlain(node, respMap) : fn(node, respMap);
             return;
     }
@@ -233,110 +221,35 @@ function parseDfs(node, respMap) {
     }
 }
 
+// read：处理文本内容
+function procPlain(node, respMap) {
+    if (shouldPrune(node.textContent)) return;  // 剪枝：跳过已经处理的元素
+    let text = format(node.textContent);
+    if (text.length > 0 && NotChinese(text)) signature(url.host + text).then(sign => respMap[sign] ? replaceText(textContent, node, respMap[sign]) : null);
+}
+
 // read：处理 input 与文本域的 placeholder
 function processInput(node, respMap) {
     // 1、如果存在 placeholder 值
     if (node.placeholder) {
-        // 跳过中文节点
-        if (!withoutChinese(node.placeholder)) {
-            return;
-        }
-        // 剪枝：跳过已经处理的 text 元素
-        if (pruneSet.has(node.placeholder)) {
-            console.log("已处理的 placeholder，跳过：", node.placeholder)
-            return;
-        }
-
-        let placeholder = node.placeholder.replace(/\u00A0/g, ' ').trim();
-        if (placeholder.length > 0 && withoutChinese(placeholder)) {
-            signature(url.host + placeholder).then((value) => {
-                // respMap[signature] 不为空则替换原文本
-                if (!isNull(respMap[value]) && respMap[value] !== "") {
-                    node.placeholder = respMap[value];
-                    pruneSet.add(respMap[value])    // 剪枝
-                }
-            }).catch((error) => {
-                console.error("Error in signature promise: ", error);
-            });
-        }
+        if (shouldPrune(node.placeholder)) return;  // 剪枝：跳过已经处理的元素
+        let text = format(node.placeholder);
+        if (text.length > 0 && NotChinese(text)) signature(url.host + text).then(sign => respMap[sign] ? replaceText(placeholder, node, respMap[sign]) : null)
     }
     // 2、如果存在 value 值（不应该修改 input 与 textarea 的 value 值）
     if (node.value && (node.tagName.toLowerCase() === "button" || (node.tagName.toLowerCase() === "input" && ["submit", "button"].includes(node.type)))) {
-        // 跳过中文节点
-        if (!withoutChinese(node.value)) {
-            return;
-        }
-        // 剪枝：跳过已经处理的 text 元素
-        if (pruneSet.has(node.value)) {
-            console.log("已处理的按钮 value，跳过：", node.value)
-            return;
-        }
-        let value = node.value.replace(/\u00A0/g, ' ').trim();
-        if (value.length > 0 && withoutChinese(value)) {
-            signature(url.host + value).then((value) => {
-                // respMap[signature] 不为空则替换原文本
-                if (!isNull(respMap[value]) && respMap[value] !== "") {
-                    node.value = respMap[value];
-                    pruneSet.add(respMap[value])    // 剪枝
-                }
-            }).catch((error) => {
-                console.error("Error in signature promise: ", error);
-            });
-        }
-    }
-}
-
-// read：处理文本内容
-function procPlain(node, respMap) {
-    // 跳过中文节点
-    if (!withoutChinese(node.textContent)) {
-        return;
-    }
-    // 剪枝：跳过已经处理的 text 元素
-    if (pruneSet.has(node.textContent)) {
-        console.log("已处理的 text，跳过：", node.textContent)
-        return;
-    }
-    let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-    if (text.length > 0 && withoutChinese(text)) {
-        signature(url.host + text).then((value) => {
-            // 添加一个检查以确保 respMap 是有效的
-            if (!isNull(respMap[value]) && respMap[value] !== "") {
-                node.textContent = respMap[value];
-            }
-            pruneSet.add(respMap[value])    // 剪枝
-        }).catch((error) => {
-            console.error("Error in signature promise: ", error);
-        });
+        if (shouldPrune(node.value)) return;  // 剪枝：跳过已经处理的元素
+        let text = format(node.value)
+        if (text.length > 0 && NotChinese(text)) signature(url.host + text).then(sign => respMap[sign] ? replaceText(inputValue, node, respMap[sign]) : null)
     }
 }
 
 // read：处理 aria-label 属性
 function processAriaLabel(node, respMap) {
-    // 跳过中文节点
-    if (!withoutChinese(node.getAttribute('aria-label'))) {
-        return;
-    }
-    // 剪枝：跳过已经处理的 text 元素
-    let attribute = node.getAttribute('aria-label');
-    if (pruneSet.has(attribute)) {
-        console.log("已处理的 ariaLabel，跳过：", attribute)
-        return;
-    }
-    let ariaLabel = attribute.replace(/\u00A0/g, ' ').trim();
-    if (ariaLabel) {
-        if (ariaLabel.length > 0 && withoutChinese(ariaLabel)) {
-            signature(url.host + ariaLabel).then((value) => {
-                // 添加一个检查以确保 respMap 是有效的
-                if (respMap && respMap[value] !== undefined && respMap[value] !== "") {
-                    node.setAttribute('aria-label', respMap[value]);
-                    pruneSet.add(respMap[value])    // 剪枝
-                }
-            }).catch((error) => {
-                console.error("Error in signature promise: ", error);
-            });
-        }
-    }
+    let attribute = node.getAttribute('aria-label');    // 获取属性值
+    if (shouldPrune(attribute)) return;  // 剪枝：跳过已经处理的元素
+    let text = format(attribute)
+    if (text > 0 && NotChinese(text)) signature(url.host + text).then(value => respMap[value] ? replaceText(ariaLabel, node, respMap[value]) : null)
 }
 
 // endregion
@@ -346,7 +259,7 @@ function processAriaLabel(node, respMap) {
 // 适配 nexusmods
 function procNexusmods(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
-    if (text.length > 0 && withoutChinese(text)) {
+    if (text.length > 0 && NotChinese(text)) {
 
         // 使用正则表达式匹配 text
         let commentsMatch = text.match(commentsRegex);
@@ -384,7 +297,7 @@ function procNexusmods(node, respMap) {
 function procOpenai(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
 
-    if (text.length > 0 && withoutChinese(text)) {
+    if (text.length > 0 && NotChinese(text)) {
 
         let dateOrFalse = parseDateOrFalse(text);
         if (dateOrFalse) {
@@ -400,7 +313,7 @@ function procOpenai(node, respMap) {
 function procChatGPT(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
 
-    if (text.length > 0 && withoutChinese(text)) {
+    if (text.length > 0 && NotChinese(text)) {
 
         // 提取电子邮件地址
         let emailMatch = text.match(emailRegex);
@@ -432,7 +345,7 @@ function procChatGPT(node, respMap) {
 function procMaven(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
 
-    if (text.length > 0 && withoutChinese(text)) {
+    if (text.length > 0 && NotChinese(text)) {
 
         // 处理 “Indexed Repositories (1936)”
         let repositoriesMatch = text.match(repositoriesRegex);
@@ -514,7 +427,7 @@ function procMaven(node, respMap) {
 function procDockerhub(node, respMap) {
     let text = node.textContent.replace(/\u00A0/g, ' ').trim();
 
-    if (text.length > 0 && withoutChinese(text)) {
+    if (text.length > 0 && NotChinese(text)) {
 
         // 处理更新时间的翻译
         let timeMatch = text.match(timeRegex);
@@ -564,10 +477,6 @@ function procDockerhub(node, respMap) {
 
 
 // region 通用函数
-// 判断字符串是否不包含中文
-function withoutChinese(text) {
-    return !/[\u4e00-\u9fa5]/.test(text);
-}
 
 // 计算SHA-1散列，取最后20个字符
 async function signature(text) {
@@ -601,24 +510,6 @@ function isNull(node) {
     return false
 }
 
-// 判断是否为非中文
-function isNonChinese(text) {
-    for (let i = 0; i < text.length; i++) {
-        const char = text.charCodeAt(i);
-        if ((char >= 0x4E00 && char <= 0x9FFF) ||
-            (char >= 0x3400 && char <= 0x4DBF) ||
-            (char >= 0x20000 && char <= 0x2A6DF) ||
-            (char >= 0x2A700 && char <= 0x2B73F) ||
-            (char >= 0x2B740 && char <= 0x2B81F) ||
-            (char >= 0x2B820 && char <= 0x2CEAF) ||
-            (char >= 0xF900 && char <= 0xFAFF) ||
-            (char >= 0x2F800 && char <= 0x2FA1F)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 // 验证并解析日期格式，如果格式不正确则返回false
 function parseDateOrFalse(dateString) {
     // 正则表达式，用于检查常见的日期格式（如 YYYY-MM-DD）
@@ -631,6 +522,42 @@ function parseDateOrFalse(dateString) {
     } else {
         return false; // 不是有效日期，返回 false
     }
+}
+
+// 判断字符串是否不包含中文
+function NotChinese(text) {
+    return !/[\u4e00-\u9fa5]/.test(text);
+}
+
+// 判断是否应该剪枝
+function shouldPrune(text) {
+    let has = pruneSet.has(text);
+    if (has) console.log("已处理的节点，跳过：", text)
+    return has;
+}
+
+// 文本格式化
+function format(text) {
+    return text.replace(/\u00A0/g, ' ').trim();
+}
+
+// 替换文本
+function replaceText(type, node, value) {
+    switch (type) {
+        case textContent:
+            node.textContent = value;
+            break;
+        case placeholder:
+            node.placeholder = value;
+            break;
+        case value:
+            node.value = value;
+            break;
+        case ariaLabel:
+            node.setAttribute('aria-label', value);
+            break;
+    }
+    pruneSet.add(value)    // 剪枝
 }
 
 // 初始化函数
@@ -646,7 +573,7 @@ function init() {
     }
     // TODO 未完成
     skipStringMap[nexusmods] = function (node) {
-        return node.classList.contains("desc") || node.classList.contains("material-icons")||node.classList.contains("material-icons-outlined")
+        return node.classList.contains("desc") || node.classList.contains("material-icons") || node.classList.contains("material-icons-outlined")
     }
 }
 
