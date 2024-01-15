@@ -328,6 +328,7 @@ function init() {
             || node.classList.contains("jwzzTyL0ME4eVCKuxpDL")
             || node.classList.contains("XnSvnXQFZ4QHrFiqJPSG")
             || node.classList.contains("NcsIaDLOKk0l8CjedpJc")
+            || ["code"].includes(node.tagName.toLowerCase())
     }
 }
 
