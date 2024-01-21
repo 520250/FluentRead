@@ -2,7 +2,7 @@
 // @name         流畅阅读
 // @license      GPL-3.0 license
 // @namespace    https://fr.unmeta.cn/
-// @version      0.4
+// @version      0.6
 // @description  基于上下文语境的人工智能翻译引擎，为部分网站提供精准翻译，让所有人都能够拥有基于母语般的阅读体验。程序Github开源：https://github.com/Bistutu/FluentRead，欢迎 star。
 // @author       ThinkStu
 // @match        *://*/*
@@ -189,7 +189,7 @@ function parseDfs(node, respMap) {
             // TODO 待更改
             if (node.classList.contains("im-description")) {
                 console.log("im-description")
-                transDesc(".im-description")
+                translateElement(".im-description")
             }
 
             // console.log("元素节点： ", node);
@@ -344,71 +344,71 @@ function init() {
 // endregion
 
 // region 开源
-function transDesc(el) {
-    // 使用 CSS 选择器选择元素
-    let element = document.querySelector(el);
 
-    // 如果元素不存在 或者 translate-me 元素已存在，那么直接返回
-    if (!element || document.getElementById('translate-me')) {
-        return false;
-    }
+// 参考：https://github.com/maboloshi/github-chinese
+function translateElement(selector) {
+    // 寻找目标元素
+    let target = document.querySelector(selector);
 
-    // 在元素后面插入一个翻译按钮
-    const buttonHTML = `<div id='translate-me' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer'>翻译</div>`;
-    element.insertAdjacentHTML('afterend', buttonHTML);
-    let button = element.nextSibling;
+    // 检查元素是否存在并防止重复添加翻译按钮
+    if (!target || document.getElementById('btn-translate')) return;
 
-    // 为翻译按钮添加点击事件
-    button.addEventListener('click', () => {
-        // 获取元素的文本内容
-        const desc = element.textContent.trim();
+    // 创建翻译按钮的HTML代码
+    let translateButtonHTML = `<span id='btn-translate' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer; display: inline;'>翻译</span>`;
 
-        // 如果文本内容为空，那么直接返回
-        if (!desc) {
-            return false;
+    // 将翻译按钮插入到div元素内容的末尾
+    target.insertAdjacentHTML('beforeend', translateButtonHTML);
+
+    // 获取新插入的翻译按钮元素
+    let translateButton = document.getElementById('btn-translate');
+
+    // 点击翻译按钮时的事件处理
+    translateButton.addEventListener('click', function () {
+        let textToTranslate = target.textContent
+            .replace(/翻译$/, '')
+            .replace(/\n/g, '') // 使用全局标志'g'来替换所有的换行符
+            .trim();
+        if (textToTranslate) {
+            getTranslation(textToTranslate, text => {
+                translateButton.style.display = 'none';
+                let translationDisplay = document.createElement('span');
+                translationDisplay.style.fontSize = 'small';
+                translationDisplay.innerHTML = "</br>"+text
+                // 将翻译结果插入到翻译按钮所在的位置
+                translateButton.parentNode.insertBefore(translationDisplay, translateButton);
+            });
         }
-
-        // 调用 translateDescText 函数进行翻译
-        translateDescText(desc, text => {
-            // 翻译完成后，隐藏翻译按钮，并在元素后面插入翻译结果
-            button.style.display = "none";
-            const translationHTML = `<span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`;
-            element.insertAdjacentHTML('afterend', translationHTML);
-        });
     });
 }
 
-function translateDescText(text, callback) {
-    // 使用 GM_xmlhttpRequest 函数发送 HTTP 请求
+
+function getTranslation(originalText, callback) {
+    // 定义请求参数
+    const requestData = {
+        from: "2", to: "1",
+        contents: [{text: originalText, frontBlankLine: 0}]
+    };
+
+    // 发送翻译请求
     GM_xmlhttpRequest({
-        method: "POST", // 请求方法为 POST
-        url: "https://www.iflyrec.com/TranslationService/v1/textTranslation", // 请求的 URL
-        headers: { // 请求头
-            'Content-Type': 'application/json',
-            'Origin': 'https://www.iflyrec.com',
-        },
-        data: JSON.stringify({
-            "from": "2",
-            "to": "1",
-            "contents": [{
-                "text": text,
-                "frontBlankLine": 0
-            }]
-        }), // 请求的数据
-        responseType: "json", // 响应的数据类型为 JSON
-        onload: (res) => {
+        method: "POST",
+        url: "https://www.iflyrec.com/TranslationService/v1/textTranslation",
+        headers: {"Content-Type": "application/json", "Origin": "https://www.iflyrec.com"},
+        data: JSON.stringify(requestData),
+        responseType: "json",
+        onload: response => {
             try {
-                const {status, response} = res;
-                const translatedText = (status === 200) ? response.biz[0].translateResult : "翻译失败";
-                callback(translatedText);
+                const {status, response: jsonResponse} = response;
+                const result = status === 200 ? jsonResponse.biz[0].translateResult : "翻译失败";
+                callback(result);
             } catch (error) {
-                console.error('翻译失败', error);
-                callback("翻译失败");
+                console.error('解析翻译响应失败', error);
+                callback("翻译解析失败");
             }
         },
-        onerror: (error) => {
-            console.error('网络请求失败', error);
-            callback("网络请求失败");
+        onerror: error => {
+            console.error('翻译请求错误', error);
+            callback("翻译请求失败");
         }
     });
 }
