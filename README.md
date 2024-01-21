@@ -5,7 +5,7 @@
 
 基于上下文语境的人工智能翻译引擎，为部分网站提供精准翻译，让所有人都能够拥有基于母语般的阅读体验。
 
-我们的理念："Translate every site, but do not translate everything."（翻译所有网站，但不翻译所有内容）
+理念："Translate every site, but do not translate everything."（翻译所有网站，但不翻译所有内容）
 
 <img src="./misc/images/sample-1.png" alt="image-20231008190713343" style="width: 60%; max-width: 100%;">
 
@@ -44,4 +44,9 @@ go build &&./FluentRead
 # star 历史记录
 
 [![Star History Chart](https://api.star-history.com/svg?repos=520250/FluentRead&type=Date)](https://star-history.com/#520250/FluentRead&Date)
+
+# 版本更新记录
+- 2024-01：0.6版本发布，增加讯飞翻译引擎
+- ...
+- 2023-12：0.1版本发布
 
