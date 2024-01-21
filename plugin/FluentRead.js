@@ -287,7 +287,7 @@ function NotChinese(text) {
 // 判断是否应该剪枝
 function shouldPrune(text) {
     let has = pruneSet.has(text);
-    if (has) console.log("已处理的节点，跳过：", text)
+    // if (has) console.log("已处理的节点，跳过：", text)
     return has;
 }
 
@@ -345,6 +345,14 @@ function init() {
         }
         return false
     }
+    preprocess[docker] = function (node) {
+        // 如果拥有data-testid属性且为description
+        if (node.hasAttribute("data-testid") && node.getAttribute("data-testid") === "description") {
+            translateElement(node)
+            return true
+        }
+        return false
+    }
 }
 
 // endregion
@@ -357,7 +365,7 @@ function translateElement(node) {
     // 检查元素是否存在并防止重复添加翻译按钮
     if (!node || document.getElementById('btn-translate')) return;
     // 创建翻译按钮的HTML代码
-    let translateButtonHTML = `<span id='btn-translate' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer; display: inline;'>翻译</span>`;
+    let translateButtonHTML = `<span id='btn-translate' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer; display: inline;'> 翻译</span>`;
     // 如果 target 没有子元素，则将翻译按钮插入到div元素内容的末尾
     if (!node.firstElementChild) {
         node.insertAdjacentHTML('beforeend', translateButtonHTML);
