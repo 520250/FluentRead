@@ -62,9 +62,10 @@ const textContent = 0
 const placeholder = 1
 const inputValue = 2
 const ariaLabel = 3
-// 适配器与剪枝 map
+// 适配器与剪枝、预处理 map
 let adapterFnMap = new (Map);
 let skipStringMap = new Map();
+let preprocess = new Map();
 // DOM 防抖，单位毫秒
 let throttleObserveDOM = throttle(observeDOM, 3000);
 // 剪枝 set
@@ -177,6 +178,7 @@ function observeDOM() {
     });
 }
 
+
 // read：递归提取节点文本
 function parseDfs(node, respMap) {
     if (isEmpty(node)) return;
@@ -185,17 +187,13 @@ function parseDfs(node, respMap) {
     switch (node.nodeType) {
         // 1、元素节点
         case Node.ELEMENT_NODE:
-
-            // TODO 待更改
-            if (node.classList.contains("im-description")) {
-                console.log("im-description")
-                translateElement(".im-description")
-            }
-
             // console.log("元素节点： ", node);
             // 根据 host 获取 skip 函数，判断是否需要跳过
             let skipFn = skipStringMap[url.host];
             if (skipFn && skipFn(node)) return;
+            // 判断是否需要执行插入第三方翻译按钮
+            let preFn = preprocess[url.host];
+            if (preFn && preFn(node)) return;
             // aria 提示信息
             if (node.hasAttribute("aria-label")) processNode(node, ariaLabel, respMap);
             // 按钮与文本域节点
@@ -339,6 +337,14 @@ function init() {
             || node.classList.contains("NcsIaDLOKk0l8CjedpJc")
             || ["code"].includes(node.tagName.toLowerCase())
     }
+    // 预处理
+    preprocess[maven] = function (node) {
+        if (node.classList.contains("im-description")) {
+            translateElement(".im-description")
+            return true
+        }
+        return false
+    }
 }
 
 // endregion
@@ -356,8 +362,10 @@ function translateElement(selector) {
     // 创建翻译按钮的HTML代码
     let translateButtonHTML = `<span id='btn-translate' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer; display: inline;'>翻译</span>`;
 
-    // 将翻译按钮插入到div元素内容的末尾
-    target.insertAdjacentHTML('beforeend', translateButtonHTML);
+    // 如果 target 没有子元素，则将翻译按钮插入到div元素内容的末尾
+    if (!target.firstElementChild) {
+        target.insertAdjacentHTML('beforeend', translateButtonHTML);
+    }
 
     // 获取新插入的翻译按钮元素
     let translateButton = document.getElementById('btn-translate');
@@ -366,14 +374,15 @@ function translateElement(selector) {
     translateButton.addEventListener('click', function () {
         let textToTranslate = target.textContent
             .replace(/翻译$/, '')
-            .replace(/\n/g, '') // 使用全局标志'g'来替换所有的换行符
+            .replace(/\n/g, '')
+            .replace(/最近更新 \d{4}年\d*月\d*日/g, '')
             .trim();
         if (textToTranslate) {
             getTranslation(textToTranslate, text => {
                 translateButton.style.display = 'none';
                 let translationDisplay = document.createElement('span');
                 translationDisplay.style.fontSize = 'small';
-                translationDisplay.innerHTML = "</br>"+text
+                translationDisplay.innerHTML = "</br>" + text
                 // 将翻译结果插入到翻译按钮所在的位置
                 translateButton.parentNode.insertBefore(translationDisplay, translateButton);
             });
