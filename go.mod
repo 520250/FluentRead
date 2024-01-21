@@ -7,11 +7,12 @@ require (
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.5
 	github.com/alibabacloud-go/tea v1.2.1
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.4
+	github.com/anhao/go-ernie v1.0.9
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.7.1
-	github.com/jmoiron/sqlx v1.3.5
+	github.com/sashabaranov/go-openai v1.17.11
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
 	golang.org/x/net v0.19.0
@@ -54,7 +55,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/sashabaranov/go-openai v1.17.11 // indirect
 	github.com/tjfoc/gmsm v1.3.2 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
