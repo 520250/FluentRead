@@ -64,7 +64,7 @@ func main() {
 		request := q.build()
 		resp, err := client.CreateChatCompletion(ctx, request)
 		if err != nil {
-			log.Error("openai.CreateChatCompletion err:", err)
+			log.Error("LLM.CreateChatCompletion err:", err)
 			continue
 		}
 

@@ -193,7 +193,7 @@ function parseDfs(node, respMap) {
             if (skipFn && skipFn(node)) return;
             // 判断是否需要执行插入第三方翻译按钮
             let preFn = preprocess[url.host];
-            if (preFn && preFn(node)) return;
+            preFn ? preFn(node) : null;
             // aria 提示信息
             if (node.hasAttribute("aria-label")) processNode(node, ariaLabel, respMap);
             // 按钮与文本域节点
