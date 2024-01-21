@@ -14,6 +14,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      fr.unmeta.cn
 // @connect      127.0.0.1
+// @connect      www.iflyrec.com
 // @run-at       document-end
 // @downloadURL https://update.greasyfork.org/scripts/482986/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB.user.js
 // @updateURL https://update.greasyfork.org/scripts/482986/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB.meta.js
@@ -179,10 +180,18 @@ function observeDOM() {
 // read：递归提取节点文本
 function parseDfs(node, respMap) {
     if (isEmpty(node)) return;
+
     // console.log("当前节点：", node)
     switch (node.nodeType) {
         // 1、元素节点
         case Node.ELEMENT_NODE:
+
+            // TODO 待更改
+            if (node.classList.contains("im-description")) {
+                console.log("im-description")
+                transDesc(".im-description")
+            }
+
             // console.log("元素节点： ", node);
             // 根据 host 获取 skip 函数，判断是否需要跳过
             let skipFn = skipStringMap[url.host];
@@ -330,6 +339,78 @@ function init() {
             || node.classList.contains("NcsIaDLOKk0l8CjedpJc")
             || ["code"].includes(node.tagName.toLowerCase())
     }
+}
+
+// endregion
+
+// region 开源
+function transDesc(el) {
+    // 使用 CSS 选择器选择元素
+    let element = document.querySelector(el);
+
+    // 如果元素不存在 或者 translate-me 元素已存在，那么直接返回
+    if (!element || document.getElementById('translate-me')) {
+        return false;
+    }
+
+    // 在元素后面插入一个翻译按钮
+    const buttonHTML = `<div id='translate-me' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer'>翻译</div>`;
+    element.insertAdjacentHTML('afterend', buttonHTML);
+    let button = element.nextSibling;
+
+    // 为翻译按钮添加点击事件
+    button.addEventListener('click', () => {
+        // 获取元素的文本内容
+        const desc = element.textContent.trim();
+
+        // 如果文本内容为空，那么直接返回
+        if (!desc) {
+            return false;
+        }
+
+        // 调用 translateDescText 函数进行翻译
+        translateDescText(desc, text => {
+            // 翻译完成后，隐藏翻译按钮，并在元素后面插入翻译结果
+            button.style.display = "none";
+            const translationHTML = `<span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`;
+            element.insertAdjacentHTML('afterend', translationHTML);
+        });
+    });
+}
+
+function translateDescText(text, callback) {
+    // 使用 GM_xmlhttpRequest 函数发送 HTTP 请求
+    GM_xmlhttpRequest({
+        method: "POST", // 请求方法为 POST
+        url: "https://www.iflyrec.com/TranslationService/v1/textTranslation", // 请求的 URL
+        headers: { // 请求头
+            'Content-Type': 'application/json',
+            'Origin': 'https://www.iflyrec.com',
+        },
+        data: JSON.stringify({
+            "from": "2",
+            "to": "1",
+            "contents": [{
+                "text": text,
+                "frontBlankLine": 0
+            }]
+        }), // 请求的数据
+        responseType: "json", // 响应的数据类型为 JSON
+        onload: (res) => {
+            try {
+                const {status, response} = res;
+                const translatedText = (status === 200) ? response.biz[0].translateResult : "翻译失败";
+                callback(translatedText);
+            } catch (error) {
+                console.error('翻译失败', error);
+                callback("翻译失败");
+            }
+        },
+        onerror: (error) => {
+            console.error('网络请求失败', error);
+            callback("网络请求失败");
+        }
+    });
 }
 
 // endregion
@@ -520,3 +601,4 @@ function procDockerhub(node, respMap) {
 }
 
 // endregion
+
