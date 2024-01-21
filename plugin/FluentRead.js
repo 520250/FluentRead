@@ -340,7 +340,7 @@ function init() {
     // 预处理
     preprocess[maven] = function (node) {
         if (node.classList.contains("im-description")) {
-            translateElement(".im-description")
+            translateElement(node)
             return true
         }
         return false
@@ -352,30 +352,22 @@ function init() {
 // region 开源
 
 // 参考：https://github.com/maboloshi/github-chinese
-function translateElement(selector) {
+function translateElement(node) {
     // 寻找目标元素
-    let target = document.querySelector(selector);
-
     // 检查元素是否存在并防止重复添加翻译按钮
-    if (!target || document.getElementById('btn-translate')) return;
-
+    if (!node || document.getElementById('btn-translate')) return;
     // 创建翻译按钮的HTML代码
     let translateButtonHTML = `<span id='btn-translate' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer; display: inline;'>翻译</span>`;
-
     // 如果 target 没有子元素，则将翻译按钮插入到div元素内容的末尾
-    if (!target.firstElementChild) {
-        target.insertAdjacentHTML('beforeend', translateButtonHTML);
+    if (!node.firstElementChild) {
+        node.insertAdjacentHTML('beforeend', translateButtonHTML);
     }
-
-    // 获取新插入的翻译按钮元素
-    let translateButton = document.getElementById('btn-translate');
-
-    // 点击翻译按钮时的事件处理
+    // 获取新插入的翻译按钮元素，并设置事件处理
+    let translateButton = node.firstElementChild;
     translateButton.addEventListener('click', function () {
-        let textToTranslate = target.textContent
+        let textToTranslate = node.textContent
             .replace(/翻译$/, '')
             .replace(/\n/g, '')
-            .replace(/最近更新 \d{4}年\d*月\d*日/g, '')
             .trim();
         if (textToTranslate) {
             getTranslation(textToTranslate, text => {
