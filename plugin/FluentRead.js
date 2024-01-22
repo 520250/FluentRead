@@ -27,6 +27,7 @@ const POST = "POST";
 const url = new URL(location.href.split('?')[0]);
 // cacheKey 与 时间
 const checkKey = "fluent_read_check";
+const microsoft_token = "microsoft_token";
 const expiringTime = 86400000 / 4;
 // 服务请求地址
 // const source = "http://127.0.0.1"
@@ -357,6 +358,81 @@ function init() {
 
 // endregion
 
+
+// region 三方翻译
+
+// feat: 微软翻译
+// 返回有效的令牌或 false
+async function refreshToken(token) {
+    const decodedToken = parseJwt(token);
+    const currentTimestamp = Math.floor(Date.now() / 1000); // 当前时间的UNIX时间戳（秒）
+    // 如果令牌有效且未过期，则立即返回true
+    if (decodedToken && currentTimestamp < decodedToken.exp) {
+        console.log('令牌有效');
+        return Promise.resolve(token);
+    }
+    // 如果令牌无效或已过期，则尝试获取新令牌
+    try {
+        const response = await fetch("https://edge.microsoft.com/translate/auth", {method: 'GET', redirect: 'follow'});
+        if (!response.ok) return false;
+        let token = await response.text()
+        GM_setValue(microsoft_token, token);
+        return token;
+    } catch (error) {
+        console.error('请求 microsoft translation auth 发生错误: ', error);
+        return false;
+    }
+}
+
+// 解析 jwt，返回对象
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+}
+
+// microsoft translation request
+let jwtToken = "Bearer %s"
+let myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
+
+// 输出：待翻译文本，输出：中文文本
+function microsoft_trans(origin, callback) {
+    // 从 GM 缓存获取 token
+    let jwtToken = GM_getValue(microsoft_token, undefined);
+    refreshToken(jwtToken).then(rs => {
+        // 失败，提前返回
+        if (!rs) {
+            callback(null)
+            return
+        }
+        myHeaders.set("authorization", "Bearer %s".replace("%s", rs));
+        fetch("https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=zh&api-version=3.0&includeSentenceLength=true", {
+            method: 'POST', headers: myHeaders, body: JSON.stringify([{"Text": origin}]), redirect: 'follow'
+        })
+            .then(response => response.text())
+            .then(result => {
+                // 获取翻译结果
+                let resultJson = JSON.parse(result);
+                callback(resultJson[0].translations[0].text)
+            })
+            .catch(error => {
+                console.log("调用微软翻译失败：", error)
+                callback(null)
+            });
+    })
+}
+
+// endregion
+
+
 // region 开源
 
 // 参考：https://github.com/maboloshi/github-chinese
@@ -377,11 +453,12 @@ function translateElement(node) {
             .replace(/\n/g, '')
             .trim();
         if (textToTranslate) {
-            getTranslation(textToTranslate, text => {
+            // getTranslation(textToTranslate, text => {
+            microsoft_trans(textToTranslate, text => {
                 translateButton.style.display = 'none';
                 let translationDisplay = document.createElement('span');
                 translationDisplay.style.fontSize = 'small';
-                translationDisplay.innerHTML = `<span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
+                translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
                 // 将翻译结果插入到翻译按钮所在的位置
                 translateButton.parentNode.insertBefore(translationDisplay, translateButton);
             });
@@ -422,7 +499,6 @@ function getTranslation(originalText, callback) {
 }
 
 // endregion
-
 
 // region 第三方特例
 
