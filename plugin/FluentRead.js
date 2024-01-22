@@ -28,6 +28,7 @@ const url = new URL(location.href.split('?')[0]);
 // cacheKey 与 时间
 const checkKey = "fluent_read_check";
 const microsoft_token = "microsoft_token";
+let ctrlPressed = false;
 const expiringTime = 86400000 / 4;
 // 服务请求地址
 // const source = "http://127.0.0.1"
@@ -112,6 +113,37 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
             console.log('Cache cleared!');
         }
     });
+
+    // 增加 ctrl 键的监听事件
+    document.addEventListener('keydown', event => {
+        if (event.key === "Control") ctrlPressed = true;
+        console.log(ctrlPressed);
+    });
+
+    document.addEventListener('keyup', event => {
+        if (event.key === "Control") ctrlPressed = false;
+    });
+    // 增加鼠标监听事件
+    document.body.addEventListener('mouseover', function (event) {
+        if (ctrlPressed && event.target && event.target.textContent.trim().length > 0
+            && NotChinese(event.target.textContent.trim())
+            && ["p", "div"].includes(event.target.tagName.toLowerCase())
+        ) {
+            const originalText = event.target.textContent;
+            console.log("原文本：", originalText);
+            microsoft_trans(originalText, text => {
+                // console.log("翻译结果：", text);
+                if (!text) return // 若翻译失败则结束流程
+                let translationDisplay = document.createElement('span');
+                translationDisplay.style.fontSize = 'small';
+                // translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
+                translationDisplay.innerHTML = `</br>${text}`
+                // 将翻译结果插入到翻译按钮所在的位置
+                event.target.parentNode.insertBefore(translationDisplay, event.target.nextSibling);
+            });
+        }
+    });
+
 })();
 
 // region read
@@ -454,7 +486,7 @@ function translateElement(node) {
         if (textToTranslate) {
             // getTranslation(textToTranslate, text => {
             microsoft_trans(textToTranslate, text => {
-                if(!textToTranslate) return // 若翻译失败则结束流程
+                if (!textToTranslate) return // 若翻译失败则结束流程
                 translateButton.style.display = 'none';
                 let translationDisplay = document.createElement('span');
                 translationDisplay.style.fontSize = 'small';
