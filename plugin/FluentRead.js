@@ -399,7 +399,6 @@ function parseJwt(token) {
 }
 
 // microsoft translation request
-let jwtToken = "Bearer %s"
 let myHeaders = new Headers();
 myHeaders.append("Content-Type", "application/json");
 
@@ -455,10 +454,12 @@ function translateElement(node) {
         if (textToTranslate) {
             // getTranslation(textToTranslate, text => {
             microsoft_trans(textToTranslate, text => {
+                if(!textToTranslate) return // 若翻译失败则结束流程
                 translateButton.style.display = 'none';
                 let translationDisplay = document.createElement('span');
                 translationDisplay.style.fontSize = 'small';
-                translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
+                // translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
+                translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.microsoft.com/zh-cn/translator/'>微软翻译</a> 👇</span><br/>${text}`
                 // 将翻译结果插入到翻译按钮所在的位置
                 translateButton.parentNode.insertBefore(translationDisplay, translateButton);
             });
