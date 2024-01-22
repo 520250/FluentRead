@@ -361,7 +361,6 @@ function init() {
 
 // 参考：https://github.com/maboloshi/github-chinese
 function translateElement(node) {
-    // 寻找目标元素
     // 检查元素是否存在并防止重复添加翻译按钮
     if (!node || document.getElementById('btn-translate')) return;
     // 创建翻译按钮的HTML代码
@@ -382,7 +381,7 @@ function translateElement(node) {
                 translateButton.style.display = 'none';
                 let translationDisplay = document.createElement('span');
                 translationDisplay.style.fontSize = 'small';
-                translationDisplay.innerHTML = "</br>" + text
+                translationDisplay.innerHTML = `<span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
                 // 将翻译结果插入到翻译按钮所在的位置
                 translateButton.parentNode.insertBefore(translationDisplay, translateButton);
             });
