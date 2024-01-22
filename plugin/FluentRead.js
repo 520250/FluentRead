@@ -29,6 +29,7 @@ const url = new URL(location.href.split('?')[0]);
 const checkKey = "fluent_read_check";
 const microsoft_token = "microsoft_token";
 let ctrlPressed = false;
+let hoverTimer;
 const expiringTime = 86400000 / 4;
 // 服务请求地址
 // const source = "http://127.0.0.1"
@@ -117,7 +118,6 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
     // 增加 ctrl 键的监听事件
     document.addEventListener('keydown', event => {
         if (event.key === "Control") ctrlPressed = true;
-        console.log(ctrlPressed);
     });
 
     document.addEventListener('keyup', event => {
@@ -125,26 +125,44 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
     });
     // 增加鼠标监听事件
     document.body.addEventListener('mouseover', function (event) {
-        if (ctrlPressed && event.target && event.target.textContent.trim().length > 0
-            && NotChinese(event.target.textContent.trim())
-            && ["p", "div"].includes(event.target.tagName.toLowerCase())
-        ) {
-            const originalText = event.target.textContent;
-            console.log("原文本：", originalText);
-            microsoft_trans(originalText, text => {
+        if (ctrlPressed && event.target && !["body", "script", "img", "noscript"].includes(event.target.tagName.toLowerCase())) {
+            // 开始计时
+            console.log("触发节点：", event.target)
+            hoverTimer = setTimeout(() => {
+                process(event.target, 0);   // 从当前元素开始，向下查找
+            }, 200);
+        }
+    });
+})();
+
+
+let mySet = new Set();
+
+function process(node, times) {
+    if (times > 2) return;  // 最多往下查找2层
+    switch (node.nodeType) {
+        case Node.ELEMENT_NODE:
+            for (let child of node.childNodes) {
+                if (mySet.has(child) || ["body", "script", "img", "a", "noscript"].includes(node.tagName.toLowerCase())) continue;
+                mySet.add(child);
+                process(child, times + 1);
+            }
+            break;
+        case Node.TEXT_NODE:
+            if (!NotChinese(node.textContent)) return;
+            microsoft_trans(node.textContent, text => {
                 // console.log("翻译结果：", text);
-                if (!text) return // 若翻译失败则结束流程
+                if (!text || node.textContent === text) return // 翻译失败、翻译与原文相同
                 let translationDisplay = document.createElement('span');
                 translationDisplay.style.fontSize = 'small';
                 // translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
                 translationDisplay.innerHTML = `</br>${text}`
                 // 将翻译结果插入到翻译按钮所在的位置
-                event.target.parentNode.insertBefore(translationDisplay, event.target.nextSibling);
+                node.parentNode.insertBefore(translationDisplay, node.nextSibling);
             });
-        }
-    });
+    }
+}
 
-})();
 
 // region read
 // read：异步返回 callback，表示是否需要拉取数据

@@ -25,21 +25,15 @@
 
     // 监听到的元素，应该取其 textContent
     document.body.addEventListener('mouseover', function (event) {
-        // 应该检测
-
-        if (ctrlPressed && event.target
-            && !["body", "script", "img", "noscript"].includes(event.target.tagName.toLowerCase())   // 不包含
-        ) {
+        if (ctrlPressed && event.target && !["body", "script", "img", "noscript"].includes(event.target.tagName.toLowerCase())) {
             // 开始计时
             hoverTimer = setTimeout(() => {
-                // 处理 event.target
-                process(event.target, 0);
+                process(event.target, 0);   // 从当前元素开始，向下查找
             }, 200);
         }
     });
     // 如果在指定时间内移出元素，则取消操作与计时
     document.body.addEventListener('mouseout', event => clearTimeout(hoverTimer));
-
 })();
 
 let mySet = new Set();
@@ -59,4 +53,5 @@ function process(node, times) {
             console.log(node.textContent);
     }
 }
+
 
