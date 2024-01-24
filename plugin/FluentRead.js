@@ -15,6 +15,8 @@
 // @connect      fr.unmeta.cn
 // @connect      127.0.0.1
 // @connect      www.iflyrec.com
+// @connect      edge.microsoft.com
+// @connect      api-edge.cognitive.microsofttranslator.com
 // @run-at       document-end
 // @downloadURL https://update.greasyfork.org/scripts/482986/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB.user.js
 // @updateURL https://update.greasyfork.org/scripts/482986/%E6%B5%81%E7%95%85%E9%98%85%E8%AF%BB.meta.js
@@ -115,22 +117,31 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
         }
     });
 
-    // 增加 ctrl 键的监听事件
     document.addEventListener('keydown', event => {
         if (event.key === "Control") ctrlPressed = true;
     });
 
     document.addEventListener('keyup', event => {
-        if (event.key === "Control") ctrlPressed = false;
+        if (event.key === "Control") ctrlPressed = false
     });
+
+    // 当浏览器或标签页失去焦点时，重置 ctrlPressed
+    window.addEventListener('blur', () => ctrlPressed = false)
+
     // 增加鼠标监听事件
-    document.body.addEventListener('mouseover', function (event) {
-        if (ctrlPressed && event.target && !["body", "script", "img", "noscript"].includes(event.target.tagName.toLowerCase())) {
-            // 开始计时
-            console.log("触发节点：", event.target)
-            hoverTimer = setTimeout(() => {
-                process(event.target, 0);   // 从当前元素开始，向下查找
-            }, 200);
+    document.body.addEventListener('mousemove', function (event) {
+        if (event.target && !["body", "script", "img", "noscript"].includes(event.target.tagName.toLowerCase())) {
+            // 只有当 ctrl 被按下时才开始计时
+            if (ctrlPressed) {
+                clearTimeout(hoverTimer); // 清除之前的计时器
+                hoverTimer = setTimeout(() => {
+                    // 再次检查 ctrl 是否仍被按下
+                    if (ctrlPressed) {
+                        console.log("触发节点：", event.target);
+                        process(event.target, 0); // 从当前元素开始，向下查找
+                    }
+                }, 50);
+            }
         }
     });
 })();
@@ -143,22 +154,24 @@ function process(node, times) {
     switch (node.nodeType) {
         case Node.ELEMENT_NODE:
             for (let child of node.childNodes) {
-                if (mySet.has(child) || ["body", "script", "img", "a", "noscript"].includes(node.tagName.toLowerCase())) continue;
+                if (mySet.has(child) || ["body", "script", "img", "noscript"].includes(node.tagName.toLowerCase())) continue;
                 mySet.add(child);
                 process(child, times + 1);
             }
             break;
         case Node.TEXT_NODE:
-            if (!NotChinese(node.textContent)) return;
+            if (!NotChinese(node.textContent)) return;  // 包含中文则跳过
             microsoft_trans(node.textContent, text => {
-                // console.log("翻译结果：", text);
+                console.log("翻译结果：", text);
                 if (!text || node.textContent === text) return // 翻译失败、翻译与原文相同
-                let translationDisplay = document.createElement('span');
-                translationDisplay.style.fontSize = 'small';
-                // translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
-                translationDisplay.innerHTML = `</br>${text}`
-                // 将翻译结果插入到翻译按钮所在的位置
-                node.parentNode.insertBefore(translationDisplay, node.nextSibling);
+
+                // let translationDisplay = document.createElement('span');
+                // translationDisplay.style.fontSize = 'small';
+                // translationDisplay.innerHTML = `</br>${text}`
+                // // 将翻译结果插入到翻译按钮所在的位置
+                // node.parentNode.insertBefore(translationDisplay, node.nextSibling);
+                // 替换
+                node.textContent = text;
             });
     }
 }
@@ -367,6 +380,7 @@ function replaceText(type, node, value) {
 }
 
 function init() {
+    ctrlPressed = false;
     // 填充适配器 map
     adapterFnMap[maven] = procMaven
     adapterFnMap[docker] = procDockerhub
@@ -412,27 +426,38 @@ function init() {
 // region 三方翻译
 
 // feat: 微软翻译
+
 // 返回有效的令牌或 false
-async function refreshToken(token) {
+function refreshToken(token) {
     const decodedToken = parseJwt(token);
     const currentTimestamp = Math.floor(Date.now() / 1000); // 当前时间的UNIX时间戳（秒）
+
     // 如果令牌有效且未过期，则立即返回true
     if (decodedToken && currentTimestamp < decodedToken.exp) {
         console.log('令牌有效');
         return Promise.resolve(token);
     }
+
     // 如果令牌无效或已过期，则尝试获取新令牌
-    try {
-        const response = await fetch("https://edge.microsoft.com/translate/auth", {method: 'GET', redirect: 'follow'});
-        if (!response.ok) return false;
-        let token = await response.text()
-        GM_setValue(microsoft_token, token);
-        return token;
-    } catch (error) {
-        console.error('请求 microsoft translation auth 发生错误: ', error);
-        return false;
-    }
+    return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: "https://edge.microsoft.com/translate/auth",
+            onload: function (response) {
+                if (response.status === 200) {
+                    let token = response.responseText;
+                    GM_setValue('microsoft_token', token);
+                    resolve(token);
+                } else reject('请求 microsoft translation auth 失败: ' + response.status);
+            },
+            onerror: function (error) {
+                console.error('请求 microsoft translation auth 发生错误: ', error);
+                reject(error);
+            }
+        });
+    });
 }
+
 
 // 解析 jwt，返回对象
 function parseJwt(token) {
@@ -448,35 +473,40 @@ function parseJwt(token) {
     }
 }
 
-// microsoft translation request
-let myHeaders = new Headers();
-myHeaders.append("Content-Type", "application/json");
-
-// 输出：待翻译文本，输出：中文文本
+// 微软翻译接口
 function microsoft_trans(origin, callback) {
     // 从 GM 缓存获取 token
-    let jwtToken = GM_getValue(microsoft_token, undefined);
+    let jwtToken = GM_getValue('microsoft_token', undefined);
     refreshToken(jwtToken).then(rs => {
         // 失败，提前返回
         if (!rs) {
-            callback(null)
-            return
+            callback(null);
+            return;
         }
-        myHeaders.set("authorization", "Bearer %s".replace("%s", rs));
-        fetch("https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=zh&api-version=3.0&includeSentenceLength=true", {
-            method: 'POST', headers: myHeaders, body: JSON.stringify([{"Text": origin}]), redirect: 'follow'
-        })
-            .then(response => response.text())
-            .then(result => {
-                // 获取翻译结果
-                let resultJson = JSON.parse(result);
-                callback(resultJson[0].translations[0].text)
-            })
-            .catch(error => {
-                console.log("调用微软翻译失败：", error)
-                callback(null)
-            });
-    })
+
+        GM_xmlhttpRequest({
+            method: 'POST',
+            url: "https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=zh&api-version=3.0&includeSentenceLength=true",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + rs
+            },
+            data: JSON.stringify([{"Text": origin}]),
+            onload: function (response) {
+                if (response.status === 200) {
+                    let resultJson = JSON.parse(response.responseText);
+                    callback(resultJson[0].translations[0].text);
+                } else {
+                    console.log("调用微软翻译失败：", response.status);
+                    callback(null);
+                }
+            },
+            onerror: function (error) {
+                console.log("调用微软翻译失败：", error);
+                callback(null);
+            }
+        });
+    });
 }
 
 // endregion
