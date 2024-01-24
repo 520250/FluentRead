@@ -136,9 +136,6 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
 
             clearTimeout(hoverTimer); // 清除之前的计时器
             hoverTimer = setTimeout(() => {
-
-                console.log("触发节点：", event.target);
-
                 // 若触发特殊节点，则从父节点开始向下查找
                 if (["p", "th", "td"].includes(event.target.parentNode.tagName.toLowerCase())) {
                     process(event.target.parentNode, 0); // 从父节点开始，向下查找
@@ -150,35 +147,6 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
         }
     });
 })();
-
-let mySet = new Set();
-
-function process(node, times) {
-    if (times > 2) return;  // 最多往下查找2层
-    switch (node.nodeType) {
-        case Node.ELEMENT_NODE:
-            for (let child of node.childNodes) {
-                if (mySet.has(child) || ["body", "script", "img", "noscript"].includes(node.tagName.toLowerCase())) continue;
-                mySet.add(child);
-                process(child, times + 1);
-            }
-            break;
-        case Node.TEXT_NODE:
-            if (!node.textContent || !NotChinese(node.textContent)) return;  // 包含为空或中文则跳过
-            microsoft_trans(node.textContent, text => {
-                console.log("翻译结果：", text);
-                if (!text || node.textContent === text) return // 翻译失败、翻译与原文相同
-                node.textContent = text;    // 替换
-
-                /* let translationDisplay = document.createElement('span');
-                 translationDisplay.style.fontSize = 'small';
-                 translationDisplay.innerHTML = `</br>${text}`
-                 // 将翻译结果插入到翻译按钮所在的位置
-                 node.parentNode.insertBefore(translationDisplay, node.nextSibling);*/
-            });
-    }
-}
-
 
 // region read
 // read：异步返回 callback，表示是否需要拉取数据
@@ -412,6 +380,24 @@ function init() {
     preprocess[docker] = function (node) {
         return false
     }
+
+    // 插入CSS：转圈动画
+    const style = document.createElement('style');
+    style.innerHTML = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loading-spinner-fluentread {
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid blue;
+        border-radius: 50%;
+        width: 12px;
+        height: 12px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }`;
+    document.head.appendChild(style);
 }
 
 // endregion
@@ -428,7 +414,7 @@ function refreshToken(token) {
 
     // 如果令牌有效且未过期，则立即返回true
     if (decodedToken && currentTimestamp < decodedToken.exp) {
-        console.log('令牌有效');
+        // console.log('令牌有效');
         return Promise.resolve(token);
     }
 
@@ -477,7 +463,6 @@ function microsoft_trans(origin, callback) {
             callback(null);
             return;
         }
-
         GM_xmlhttpRequest({
             method: 'POST',
             url: "https://api-edge.cognitive.microsofttranslator.com/translate?from=&to=zh&api-version=3.0&includeSentenceLength=true",
@@ -501,6 +486,47 @@ function microsoft_trans(origin, callback) {
             }
         });
     });
+}
+
+let mySet = new Set();
+
+function process(node, times) {
+    if (times > 2) return; // 最多往下查找2层
+    switch (node.nodeType) {
+        case Node.ELEMENT_NODE:
+            for (let child of node.childNodes) {
+                if (mySet.has(child) || ["body", "script", "img", "noscript"].includes(node.tagName.toLowerCase())) continue;
+                mySet.add(child);
+                process(child, times + 1);
+            }
+            break;
+        case Node.TEXT_NODE:
+            if (!node.textContent || !NotChinese(node.textContent)) return; // 包含为空或中文则跳过
+
+            // 创建转圈动画的元素
+            let spinner = createLoadingSpinner();
+            let textParent = node.parentNode;
+            let textSibling = node.nextSibling;
+            textParent.insertBefore(spinner, textSibling); // 插入动画元素
+
+            microsoft_trans(node.textContent, text => {
+                // 移除转圈动画元素
+                textParent.removeChild(spinner);
+
+                if (!text || node.textContent === text) return
+
+                console.log("翻译结果：", text);
+                node.textContent = text;    // 替换文本
+            });
+    }
+}
+
+
+// 这是创建转圈动画元素的函数
+function createLoadingSpinner() {
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-spinner-fluentread';
+    return spinner;
 }
 
 // endregion
