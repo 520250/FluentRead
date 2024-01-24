@@ -164,7 +164,7 @@ function process(node, times) {
             }
             break;
         case Node.TEXT_NODE:
-            if (!NotChinese(node.textContent)) return;  // 包含中文则跳过
+            if (!node.textContent || !NotChinese(node.textContent)) return;  // 包含为空或中文则跳过
             microsoft_trans(node.textContent, text => {
                 console.log("翻译结果：", text);
                 if (!text || node.textContent === text) return // 翻译失败、翻译与原文相同
