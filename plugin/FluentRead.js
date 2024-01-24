@@ -255,7 +255,7 @@ function parseDfs(node, respMap) {
             // 根据 host 获取 skip 函数，判断是否需要跳过
             let skipFn = skipStringMap[url.host];
             if (skipFn && skipFn(node)) return;
-            // 判断是否需要执行插入第三方翻译按钮
+            // todo 前置操作，暂未使用
             let preFn = preprocess[url.host];
             preFn ? preFn(node) : null;
             // aria 提示信息
@@ -404,18 +404,9 @@ function init() {
     }
     // 预处理
     preprocess[maven] = function (node) {
-        if (node.classList.contains("im-description")) {
-            translateElement(node)
-            return true
-        }
         return false
     }
     preprocess[docker] = function (node) {
-        // 如果拥有data-testid属性且为description
-        if (node.hasAttribute("data-testid") && node.getAttribute("data-testid") === "description") {
-            translateElement(node)
-            return true
-        }
         return false
     }
 }
@@ -506,76 +497,6 @@ function microsoft_trans(origin, callback) {
                 callback(null);
             }
         });
-    });
-}
-
-// endregion
-
-
-// region 开源
-
-// 参考：https://github.com/maboloshi/github-chinese
-function translateElement(node) {
-    // 检查元素是否存在并防止重复添加翻译按钮
-    if (!node || document.getElementById('btn-translate')) return;
-    // 创建翻译按钮的HTML代码
-    let translateButtonHTML = `<span id='btn-translate' style='color: rgb(27, 149, 224); font-size: small; cursor: pointer; display: inline;'> 翻译</span>`;
-    // 如果 target 没有子元素，则将翻译按钮插入到div元素内容的末尾
-    if (!node.firstElementChild) {
-        node.insertAdjacentHTML('beforeend', translateButtonHTML);
-    }
-    // 获取新插入的翻译按钮元素，并设置事件处理
-    let translateButton = node.firstElementChild;
-    translateButton.addEventListener('click', function () {
-        let textToTranslate = node.textContent
-            .replace(/翻译$/, '')
-            .replace(/\n/g, '')
-            .trim();
-        if (textToTranslate) {
-            // getTranslation(textToTranslate, text => {
-            microsoft_trans(textToTranslate, text => {
-                if (!textToTranslate) return // 若翻译失败则结束流程
-                translateButton.style.display = 'none';
-                let translationDisplay = document.createElement('span');
-                translationDisplay.style.fontSize = 'small';
-                // translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.iflyrec.com/html/translate.html'>讯飞听见</a> 翻译👇</span><br/>${text}`
-                translationDisplay.innerHTML = `</br><span style='font-size: small'>由 <a target='_blank' style='color:rgb(27, 149, 224);' href='https://www.microsoft.com/zh-cn/translator/'>微软翻译</a> 👇</span><br/>${text}`
-                // 将翻译结果插入到翻译按钮所在的位置
-                translateButton.parentNode.insertBefore(translationDisplay, translateButton);
-            });
-        }
-    });
-}
-
-
-function getTranslation(originalText, callback) {
-    // 定义请求参数
-    const requestData = {
-        from: "2", to: "1",
-        contents: [{text: originalText, frontBlankLine: 0}]
-    };
-
-    // 发送翻译请求
-    GM_xmlhttpRequest({
-        method: "POST",
-        url: "https://www.iflyrec.com/TranslationService/v1/textTranslation",
-        headers: {"Content-Type": "application/json", "Origin": "https://www.iflyrec.com"},
-        data: JSON.stringify(requestData),
-        responseType: "json",
-        onload: response => {
-            try {
-                const {status, response: jsonResponse} = response;
-                const result = status === 200 ? jsonResponse.biz[0].translateResult : "翻译失败";
-                callback(result);
-            } catch (error) {
-                console.error('解析翻译响应失败', error);
-                callback("翻译解析失败");
-            }
-        },
-        onerror: error => {
-            console.error('翻译请求错误', error);
-            callback("翻译请求失败");
-        }
     });
 }
 
