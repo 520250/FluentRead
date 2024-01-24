@@ -132,20 +132,24 @@ const typeMap = {'Test': '测试', 'Provided': '提供', 'Compile': '编译'};
     document.body.addEventListener('mousemove', function (event) {
         if (event.target && !["body", "script", "img", "noscript"].includes(event.target.tagName.toLowerCase())) {
             // 只有当 ctrl 被按下时才开始计时
-            if (ctrlPressed) {
-                clearTimeout(hoverTimer); // 清除之前的计时器
-                hoverTimer = setTimeout(() => {
-                    // 再次检查 ctrl 是否仍被按下
-                    if (ctrlPressed) {
-                        console.log("触发节点：", event.target);
-                        process(event.target, 0); // 从当前元素开始，向下查找
-                    }
-                }, 50);
-            }
+            if (!ctrlPressed) return
+
+            clearTimeout(hoverTimer); // 清除之前的计时器
+            hoverTimer = setTimeout(() => {
+
+                console.log("触发节点：", event.target);
+
+                // 若触发特殊节点，则从父节点开始向下查找
+                if (["p", "th", "td"].includes(event.target.parentNode.tagName.toLowerCase())) {
+                    process(event.target.parentNode, 0); // 从父节点开始，向下查找
+                    return
+                }
+                process(event.target, 0); // 从当前元素开始，向下查找
+            }, 50);
+
         }
     });
 })();
-
 
 let mySet = new Set();
 
@@ -164,14 +168,13 @@ function process(node, times) {
             microsoft_trans(node.textContent, text => {
                 console.log("翻译结果：", text);
                 if (!text || node.textContent === text) return // 翻译失败、翻译与原文相同
+                node.textContent = text;    // 替换
 
-                // let translationDisplay = document.createElement('span');
-                // translationDisplay.style.fontSize = 'small';
-                // translationDisplay.innerHTML = `</br>${text}`
-                // // 将翻译结果插入到翻译按钮所在的位置
-                // node.parentNode.insertBefore(translationDisplay, node.nextSibling);
-                // 替换
-                node.textContent = text;
+                /* let translationDisplay = document.createElement('span');
+                 translationDisplay.style.fontSize = 'small';
+                 translationDisplay.innerHTML = `</br>${text}`
+                 // 将翻译结果插入到翻译按钮所在的位置
+                 node.parentNode.insertBefore(translationDisplay, node.nextSibling);*/
             });
     }
 }
