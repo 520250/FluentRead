@@ -531,6 +531,53 @@ function createLoadingSpinner() {
 
 // endregion
 
+// region 文心一言
+
+let access_token_wxyy = "";
+
+function chatWXYY(origin, callback) {
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions_pro?access_token=' + access_token_wxyy,
+        headers: {"Content-Type": "application/json"},
+        data: JSON.stringify({
+            'messages': [{
+                "role": "user",
+                "content": "汉化，请你翻译：A minimal Docker image based on Alpine Linux with a complete package index and only 5 MB in size!"
+            },]
+        }),
+        onload: function (response) {
+            // 请求成功
+            console.log("#>> onload", response.responseText);
+            let res = JSON.parse(response.responseText);
+            callback(res.result);
+        },
+        onerror: error => {
+            console.log("#>> onerror", error)
+            callback(null)
+        }
+    })
+}
+
+// 根据ak与sk获取文心一言 access_token TODO 理解 refresh_token 的使用
+function getWxYYAccessToken(ak, sk) {
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: 'https://aip.baidubce.com/oauth/2.0/token',
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        data: 'grant_type=client_credentials&client_id=' + ak + '&client_secret=' + sk,
+        onload: function (response) {
+            let res = JSON.parse(response.responseText);
+            if (res.access_token) access_token_wxyy = res.access_token;
+        },
+        onerror: error => console.log('Failed to refresh access token:', error)
+    });
+}
+
+// endregion
+
 // region 第三方特例
 
 // 适配 coze
